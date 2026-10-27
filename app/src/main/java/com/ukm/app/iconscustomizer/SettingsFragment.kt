@@ -1,26 +1,22 @@
 package com.ukm.app.iconscustomizer
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.core.view.isVisible
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
@@ -39,33 +35,30 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
     data class IconPackInfo(val name: String, val packageName: String)
 
     private var installedIconPacks = listOf<IconPackInfo>()
-    private lateinit var switchEnableTheming: MaterialSwitch
-    private lateinit var switchHomescreenOnly: MaterialSwitch
-    private lateinit var switchMonet: MaterialSwitch
+
+    // Tab Containers
+    private lateinit var containerDesktop: View
+    private lateinit var containerSettings: View
+    private var currentTabId = R.id.nav_home
+
+    // Switches
+    private lateinit var switchHideIconLabels: MaterialSwitch
+    private lateinit var switchHideIconShadows: MaterialSwitch
     private lateinit var switchEnableDock: MaterialSwitch
-    private lateinit var switchEnableMonetDockFolder: MaterialSwitch
-    private lateinit var switchMonetClock: MaterialSwitch
+    private lateinit var switchDockBlur: MaterialSwitch
+    private lateinit var switchHideDockLabels: MaterialSwitch
+    private lateinit var switchEnableDockFolder: MaterialSwitch
+    private lateinit var switchUnlockAnimations: MaterialSwitch
+    private lateinit var switchUnlockAnimRate: MaterialSwitch
+
+    // Sliders
     private lateinit var sliderIconSize: Slider
+    private lateinit var sliderDockWidth: Slider
+    private lateinit var sliderDockHeight: Slider
     private lateinit var sliderDockCornerRadius: Slider
     private lateinit var sliderDockOpacity: Slider
-
-    private val colorPickerLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val colorId = result.data?.getIntExtra("RETURNED_COLOR_ID", 0) ?: 0
-            val targetKey = result.data?.getStringExtra("RETURNED_TARGET_KEY")
-            view?.let { v ->
-                when (targetKey) {
-                    "monet_fg_color" -> updateColorPreview(v, R.id.img_preview_fg, colorId)
-                    "monet_bg_color" -> updateColorPreview(v, R.id.img_preview_bg, colorId)
-                    "monet_folder_dock_bg_color" ->
-                        updateColorPreview(v, R.id.img_preview_dock_bg, colorId)
-                    "monet_clock_color" -> updateColorPreview(v, R.id.img_preview_clock, colorId)
-                }
-            }
-        }
-    }
+    private lateinit var sliderFolderCornerRadius: Slider
+    private lateinit var sliderFolderOpacity: Slider
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -75,10 +68,18 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        (activity as? MainActivity)?.setScreenTitle(getString(R.string.app_name))
         installedIconPacks = getInstalledIconPacks(requireContext())
         setupInteractions(view)
         loadSystemInfo(view)
+        selectTab(currentTabId)
+    }
+
+    fun selectTab(tabId: Int) {
+        currentTabId = tabId
+        if (!::containerDesktop.isInitialized) return
+        containerDesktop.isVisible = tabId == R.id.nav_home
+        containerSettings.isVisible = tabId == R.id.nav_settings
+        view?.findViewById<NestedScrollView>(R.id.settings_scroll)?.smoothScrollTo(0, 0)
     }
 
     override fun onStart() {
@@ -92,7 +93,7 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
     }
 
     override fun onServiceStateChanged(service: XposedService?) {
-        Log.i(MainHook.TAG, "Service State Changed")
+        Log.i(Constants.TAG, "Service State Changed")
         this.mService = service
         activity?.runOnUiThread { applyServiceStateToUI(view) }
     }
@@ -114,11 +115,11 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
         }
     }
 
-    private fun bindSlider(view: View, slider: Slider, valueViewId: Int, prefKey: String) {
+    private fun bindSlider(view: View, slider: Slider, valueViewId: Int, prefKey: String, unit: String = "") {
         val valueView = view.findViewById<TextView>(valueViewId)
-        slider.setLabelFormatter { it.toInt().toString() }
+        slider.setLabelFormatter { "${it.toInt()}$unit" }
         slider.addOnChangeListener { _, value, fromUser ->
-            valueView.text = value.toInt().toString()
+            valueView.text = "${value.toInt()}$unit"
             if (fromUser && mService != null) {
                 UIHelpers.pushRemotePref(prefKey, value.toInt())
             }
@@ -131,59 +132,122 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
         })
     }
 
-    private fun bindColorRow(view: View, rowId: Int, title: String, targetKey: String, typeKey: String) {
-        view.findViewById<View>(rowId).setOnClickListener {
-            val intent = Intent(requireContext(), ColorPickerActivity::class.java).apply {
-                putExtra("EXTRA_TITLE", title)
-                putExtra("EXTRA_TARGET_KEY", targetKey)
-                putExtra("EXTRA_TYPE_KEY", typeKey)
-            }
-            colorPickerLauncher.launch(intent)
+    private fun openAllApps(packPackage: String) {
+        val fragment = AllAppsFragment().apply {
+            arguments = Bundle().apply { putString("EXTRA_ICON_PACK", packPackage) }
         }
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    private fun showNoPacksDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setIcon(R.drawable.ic_info)
+            .setTitle(R.string.dialog_no_packs_title)
+            .setMessage(R.string.dialog_no_packs_msg)
+            .setPositiveButton(R.string.btn_search_google_play) { _, _ ->
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://search?q=icon+pack"))
+                    startActivity(intent)
+                } catch (_: Throwable) {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/search?q=icon+pack&c=apps"))
+                    startActivity(intent)
+                }
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    private fun showIconPackPicker(view: View, openAppsAfterSelection: Boolean = false) {
+        if (installedIconPacks.isEmpty()) {
+            showNoPacksDialog()
+            return
+        }
+        val displayNames = arrayOf("None") + installedIconPacks.map { it.name }.toTypedArray()
+        val packageNames = arrayOf("none") + installedIconPacks.map { it.packageName }.toTypedArray()
+
+        val currentSelection = mService?.getRemotePreferences(PREF_NAME)?.getString("icon_pack", "none")
+        val currentIndex = packageNames.indexOf(currentSelection).takeIf { it >= 0 } ?: 0
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setIcon(R.drawable.ic_apps)
+            .setTitle(R.string.pref_choose_pack)
+            .setSingleChoiceItems(displayNames, currentIndex) { dialog, which ->
+                val chosenPack = packageNames[which]
+                UIHelpers.pushRemotePref("icon_pack", chosenPack)
+                UIHelpers.pushRemotePref("enable_themed_icons", chosenPack != "none")
+                applyServiceStateToUI(view)
+                UIHelpers.restartLauncher(requireContext())
+                dialog.dismiss()
+                if (openAppsAfterSelection && chosenPack != "none") {
+                    openAllApps(chosenPack)
+                }
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
     }
 
     private fun setupInteractions(view: View) {
-        switchEnableTheming = view.findViewById(R.id.switch_enable_theming)
-        switchHomescreenOnly = view.findViewById(R.id.switch_homescreen_only)
-        switchMonet = view.findViewById(R.id.switch_enable_monet)
+        // Tab Containers
+        containerDesktop = view.findViewById(R.id.container_desktop)
+        containerSettings = view.findViewById(R.id.container_settings)
+
+        // Switches
+        switchHideIconLabels = view.findViewById(R.id.switch_hide_icon_labels)
+        switchHideIconShadows = view.findViewById(R.id.switch_hide_icon_shadows)
         switchEnableDock = view.findViewById(R.id.switch_enable_dock)
-        switchEnableMonetDockFolder = view.findViewById(R.id.switch_monet_dock_folder)
-        switchMonetClock = view.findViewById(R.id.switch_monet_clock)
+        switchDockBlur = view.findViewById(R.id.switch_dock_blur)
+        switchHideDockLabels = view.findViewById(R.id.switch_hide_dock_labels)
+        switchEnableDockFolder = view.findViewById(R.id.switch_monet_dock_folder)
+        switchUnlockAnimations = view.findViewById(R.id.switch_unlock_animations)
+        switchUnlockAnimRate = view.findViewById(R.id.switch_unlock_anim_rate)
+
+        // Sliders
         sliderIconSize = view.findViewById(R.id.slider_icon_size)
-        sliderDockOpacity = view.findViewById(R.id.slider_dock_opacity)
+        sliderDockWidth = view.findViewById(R.id.slider_dock_width)
+        sliderDockHeight = view.findViewById(R.id.slider_dock_height)
         sliderDockCornerRadius = view.findViewById(R.id.slider_dock_corners)
+        sliderDockOpacity = view.findViewById(R.id.slider_dock_opacity)
+        sliderFolderCornerRadius = view.findViewById(R.id.slider_folder_corners)
+        sliderFolderOpacity = view.findViewById(R.id.slider_folder_opacity)
 
-        bindSwitchRow(view, R.id.row_enable_theming, switchEnableTheming, "enable_themed_icons", true)
-        bindSwitchRow(view, R.id.row_homescreen_only, switchHomescreenOnly, "themed_icons_homescreen_only", false)
-        bindSwitchRow(view, R.id.row_enable_monet, switchMonet, "enable_monet_colors", true)
+        // Bind Switches
+        bindSwitchRow(view, R.id.row_hide_icon_labels, switchHideIconLabels, "hide_icon_labels", false)
+        bindSwitchRow(view, R.id.row_hide_icon_shadows, switchHideIconShadows, "hide_icon_shadows", false)
         bindSwitchRow(view, R.id.row_enable_dock, switchEnableDock, "enable_dock", true)
-        bindSwitchRow(view, R.id.row_monet_dock_folder, switchEnableMonetDockFolder, "theme_dock_folder", true)
-        bindSwitchRow(view, R.id.row_monet_clock, switchMonetClock, "enable_themed_clock", true)
+        bindSwitchRow(view, R.id.row_dock_blur, switchDockBlur, "dock_blur", false)
+        bindSwitchRow(view, R.id.row_hide_dock_labels, switchHideDockLabels, "hide_dock_labels", false)
+        bindSwitchRow(view, R.id.row_monet_dock_folder, switchEnableDockFolder, "theme_dock_folder", true)
+        bindSwitchRow(view, R.id.row_unlock_animations, switchUnlockAnimations, "unlock_animations", false)
+        bindSwitchRow(view, R.id.row_unlock_anim_rate, switchUnlockAnimRate, "unlock_anim_rate", false)
 
+        // Bind Sliders
         bindSlider(view, sliderIconSize, R.id.tv_icon_size_value, "icon_size")
-        bindSlider(view, sliderDockOpacity, R.id.tv_dock_opacity_value, "dock_folder_opacity")
+        bindSlider(view, sliderDockWidth, R.id.tv_dock_width_value, "dock_width", "%")
+        bindSlider(view, sliderDockHeight, R.id.tv_dock_height_value, "dock_height", " dp")
         bindSlider(view, sliderDockCornerRadius, R.id.tv_dock_corners_value, "dock_corner_radius")
+        bindSlider(view, sliderDockOpacity, R.id.tv_dock_opacity_value, "dock_folder_opacity")
+        bindSlider(view, sliderFolderCornerRadius, R.id.tv_folder_corners_value, "folder_corner_radius")
+        bindSlider(view, sliderFolderOpacity, R.id.tv_folder_opacity_value, "folder_opacity")
 
-        bindColorRow(view, R.id.row_monet_fg, "Pick Foreground Color", "monet_fg_color", "selected_fg_color_name")
-        bindColorRow(view, R.id.row_monet_bg, "Pick Background Color", "monet_bg_color", "selected_bg_color_name")
-        bindColorRow(view, R.id.row_dock_bg, "Pick Dock Background", "monet_folder_dock_bg_color", "selected_monet_folder_dock_bg_color")
-        bindColorRow(view, R.id.row_clock_color, "Pick Clock Color", "monet_clock_color", "selected_monet_clock_color")
-
+        // Icon pack row
         view.findViewById<View>(R.id.row_icon_pack).setOnClickListener { showIconPackPicker(view) }
 
+        // Per-app icon customization row
         view.findViewById<View>(R.id.row_apply_custom).setOnClickListener {
             val selectedPack = mService?.getRemotePreferences(PREF_NAME)?.getString("icon_pack", "none")
-            if (selectedPack != null && selectedPack != "none") {
-                val fragment = AllAppsFragment().apply {
-                    arguments = Bundle().apply { putString("EXTRA_ICON_PACK", selectedPack) }
-                }
-                requireActivity().supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .addToBackStack(null)
-                    .commit()
+            if (installedIconPacks.isEmpty()) {
+                showNoPacksDialog()
+            } else if (selectedPack == null || selectedPack == "none") {
+                showIconPackPicker(view, openAppsAfterSelection = true)
+            } else {
+                openAllApps(selectedPack)
             }
         }
 
+        // Action Buttons
         view.findViewById<View>(R.id.btn_restart_launcher).setOnClickListener { button ->
             button.isEnabled = false
             val appContext = requireContext().applicationContext
@@ -285,82 +349,52 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
         if (service == null) return
 
         val prefs = service.getRemotePreferences(PREF_NAME)
-        val isThemingEnabled = prefs.getBoolean("enable_themed_icons", false)
-        val isMonetCustomization = prefs.getBoolean("enable_monet_colors", false)
         val isThemeDockFolder = prefs.getBoolean("theme_dock_folder", false)
         val isDockEnabled = prefs.getBoolean("enable_dock", false)
-        val isThemeClockWidget = prefs.getBoolean("enable_themed_clock", false)
         val selectedPackId = prefs.getString("icon_pack", "none") ?: "none"
 
         isUpdatingUI = true
-        switchEnableTheming.isChecked = isThemingEnabled
-        switchHomescreenOnly.isChecked = prefs.getBoolean("themed_icons_homescreen_only", false)
-        switchMonet.isChecked = isMonetCustomization
         switchEnableDock.isChecked = isDockEnabled
-        switchEnableMonetDockFolder.isChecked = isThemeDockFolder
-        switchMonetClock.isChecked = isThemeClockWidget
+        switchDockBlur.isChecked = prefs.getBoolean("dock_blur", true)
+        switchEnableDockFolder.isChecked = isThemeDockFolder
+        switchHideIconLabels.isChecked = prefs.getBoolean("hide_icon_labels", false)
+        switchHideIconShadows.isChecked = prefs.getBoolean("hide_icon_shadows", false)
+        switchHideDockLabels.isChecked = prefs.getBoolean("hide_dock_labels", false)
+        switchUnlockAnimations.isChecked = prefs.getBoolean("unlock_animations", false)
+        switchUnlockAnimRate.isChecked = prefs.getBoolean("unlock_anim_rate", false)
+
+        sliderDockWidth.value = prefs.getInt("dock_width", 90).toFloat()
+            .coerceIn(sliderDockWidth.valueFrom, sliderDockWidth.valueTo)
+        sliderDockHeight.value = prefs.getInt("dock_height", 14).toFloat()
+            .coerceIn(sliderDockHeight.valueFrom, sliderDockHeight.valueTo)
         sliderIconSize.value = prefs.getInt("icon_size", 180).toFloat()
             .coerceIn(sliderIconSize.valueFrom, sliderIconSize.valueTo)
         sliderDockOpacity.value = prefs.getInt("dock_folder_opacity", 200).toFloat()
             .coerceIn(sliderDockOpacity.valueFrom, sliderDockOpacity.valueTo)
         sliderDockCornerRadius.value = prefs.getInt("dock_corner_radius", 60).toFloat()
             .coerceIn(sliderDockCornerRadius.valueFrom, sliderDockCornerRadius.valueTo)
+        sliderFolderCornerRadius.value = prefs.getInt("folder_corner_radius", 66).toFloat()
+            .coerceIn(sliderFolderCornerRadius.valueFrom, sliderFolderCornerRadius.valueTo)
+        sliderFolderOpacity.value = prefs.getInt("folder_opacity", 200).toFloat()
+            .coerceIn(sliderFolderOpacity.valueFrom, sliderFolderOpacity.valueTo)
         isUpdatingUI = false
 
         view.findViewById<TextView>(R.id.tv_selected_icon_pack).text =
             if (selectedPackId == "none") "None"
-            else installedIconPacks.find { it.packageName == selectedPackId }?.name ?: "Unknown"
-
-        updateColorPreview(view, R.id.img_preview_fg, prefs.getInt("monet_fg_color", 0))
-        updateColorPreview(view, R.id.img_preview_bg, prefs.getInt("monet_bg_color", 0))
-        updateColorPreview(view, R.id.img_preview_dock_bg, prefs.getInt("monet_folder_dock_bg_color", 0))
-        updateColorPreview(view, R.id.img_preview_clock, prefs.getInt("monet_clock_color", 0))
+            else installedIconPacks.find { it.packageName == selectedPackId }?.name ?: selectedPackId
 
         fun show(visible: Boolean, vararg ids: Int) = ids.forEach { view.findViewById<View>(it).isVisible = visible }
         show(
-            isThemingEnabled,
-            R.id.row_homescreen_only, R.id.row_icon_pack, R.id.title_monet_colors, R.id.card_monet_colors
+            isDockEnabled,
+            R.id.row_dock_blur, R.id.row_dock_width, R.id.row_dock_height,
+            R.id.row_dock_corners, R.id.row_dock_opacity, R.id.row_hide_dock_labels
         )
-        show(isThemingEnabled && selectedPackId != "none", R.id.row_apply_custom)
-        show(isMonetCustomization, R.id.row_monet_fg, R.id.row_monet_bg)
-        show(isDockEnabled, R.id.row_dock_corners)
-        show(isThemeDockFolder, R.id.row_dock_opacity, R.id.row_dock_bg)
-        show(isThemeClockWidget, R.id.row_clock_color)
-    }
+        show(
+            isThemeDockFolder,
+            R.id.row_folder_corners, R.id.row_folder_opacity
+        )
 
-    private fun showIconPackPicker(view: View) {
-        val displayNames = arrayOf("None") + installedIconPacks.map { it.name }.toTypedArray()
-        val packageNames = arrayOf("none") + installedIconPacks.map { it.packageName }.toTypedArray()
-
-        val currentSelection = mService?.getRemotePreferences(PREF_NAME)?.getString("icon_pack", "none")
-        val currentIndex = packageNames.indexOf(currentSelection).takeIf { it >= 0 } ?: 0
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setIcon(R.drawable.ic_apps)
-            .setTitle(R.string.pref_choose_pack)
-            .setSingleChoiceItems(displayNames, currentIndex) { dialog, which ->
-                UIHelpers.pushRemotePref("icon_pack", packageNames[which])
-                applyServiceStateToUI(view)
-                UIHelpers.restartLauncher(requireContext())
-                dialog.dismiss()
-            }
-            .setNegativeButton(R.string.action_cancel, null)
-            .show()
-    }
-
-    private fun updateColorPreview(view: View, imageViewId: Int, savedColor: Int) {
-        val imageView = view.findViewById<ImageView>(imageViewId) ?: return
-        val resolvedColor = try {
-            if (savedColor != 0) ContextCompat.getColor(requireContext(), savedColor) else Color.TRANSPARENT
-        } catch (_: Exception) {
-            Color.TRANSPARENT
-        }
-        val outline = MaterialColors.getColor(imageView, MaterialR.attr.colorOutline)
-        imageView.setImageDrawable(GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(resolvedColor)
-            setStroke(dpToPx(1.5f).toInt(), outline)
-        })
+        selectTab(currentTabId)
     }
 
     private fun setUiEnabled(view: View, isEnabled: Boolean) {
@@ -373,9 +407,6 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
         view.isEnabled = enabled
         if (view is ViewGroup) view.children.forEach { setEnabledRecursive(it, enabled) }
     }
-
-    private fun dpToPx(dp: Float): Float =
-        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, resources.displayMetrics)
 
     private fun getInstalledIconPacks(context: Context): List<IconPackInfo> {
         val pm = context.packageManager

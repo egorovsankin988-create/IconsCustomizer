@@ -1,0 +1,118 @@
+<resources>
+    <string name="app_name">HyperDesk</string>
+    <string name="xposed_desc">Полный твикер рабочего стола POCO и HyperOS: док-бар с Material You и размытием, кастомизация значков приложений, скругления папок, скрытие подписей и плавные анимации.</string>
+
+    <string name="status_active">HyperDesk активен</string>
+    <string name="status_inactive">Модуль не активен</string>
+    <string name="status_inactive_summary">Включите HyperDesk в LSPosed, отметьте Системный лаунчер / POCO Launcher и перезапустите рабочий стол.</string>
+    <string name="status_device">Устройство: %1$s</string>
+    <string name="status_os">Система: %1$s · Android %2$s</string>
+    <string name="status_launcher">Лаунчер: %1$s</string>
+    <string name="status_os_unsupported">Рекомендуется HyperOS 1/2 или MIUI 14. Некоторые функции зависят от прошивки.</string>
+    <string name="status_launcher_unsupported">Текущий рабочий стол по умолчанию не является лаунчером HyperOS/POCO.</string>
+
+    <string name="section_icons">Значки и подписи</string>
+    <string name="section_icon_packs">Кастомизация значков приложений</string>
+    <string name="section_dock">Док-бар Material You</string>
+    <string name="section_folders">Папки и формы</string>
+    <string name="section_tweaks">Плавные анимации и скорость</string>
+    <string name="section_widgets">Часы и виджеты</string>
+    <string name="section_system">Управление и перезапуск</string>
+
+    <!-- Icons & Labels -->
+    <string name="pref_icon_size">Размер значков</string>
+    <string name="pref_icon_label_size">Размер шрифта подписей</string>
+    <string name="pref_hide_icon_labels">Скрыть названия на рабочем столе</string>
+    <string name="pref_hide_icon_labels_summary">Минималистичный вид без текстовых подписей под иконками</string>
+    <string name="pref_hide_icon_shadows">Убрать тени значков</string>
+    <string name="pref_hide_icon_shadows_summary">Отключить тени за иконками для чистого плоского стиля</string>
+    <string name="pref_homescreen_only">Только рабочий стол</string>
+    <string name="pref_homescreen_only_summary">Не изменять значки в меню всех приложений (ящике)</string>
+
+    <!-- Icon Packs -->
+    <string name="pref_icon_packs">Сторонние Icon Pack</string>
+    <string name="pref_icon_packs_summary">Применение внешних наборов значков к лаунчеру</string>
+    <string name="pref_choose_pack">Выбрать Icon Pack</string>
+    <string name="pref_apply_custom">Настроить иконки приложений</string>
+    <string name="pref_apply_custom_summary">Выбрать индивидуальный значок для каждого приложения</string>
+    <string name="dialog_no_packs_title">Икон-паки не найдены</string>
+    <string name="dialog_no_packs_msg">На устройстве пока не установлено сторонних Icon Pack. Установите любой набор значков (например, Lawnicons, Delta, CandyCons из Google Play или APK), и он появится здесь для выбора.</string>
+    <string name="btn_search_google_play">Найти в Google Play</string>
+    <string name="btn_change_icon">Выбрать</string>
+    <string name="pref_override_colors">Тематические цвета Monet</string>
+    <string name="pref_override_colors_summary">Перекрашивать значки в акцентные системные цвета обоев</string>
+    <string name="pref_fg_color">Цвет переднего плана (значка)</string>
+    <string name="pref_bg_color">Цвет заднего плана (фона)</string>
+
+    <!-- Dock -->
+    <string name="pref_dock">Включить док-бар</string>
+    <string name="pref_dock_summary">Стильная плавающая капсула для нижних иконок с ручной настройкой</string>
+    <string name="pref_dock_blur">Размытие фона (Матовое стекло)</string>
+    <string name="pref_dock_blur_summary">Аппаратный эффект блюра под док-баром (Android 12+)</string>
+    <string name="pref_dock_material">Стиль капсулы Material You</string>
+    <string name="pref_dock_material_summary">Полупрозрачная акцентная окантовка и эффект парения</string>
+    <string name="pref_dock_width">Ширина док-бара</string>
+    <string name="pref_dock_height">Высота док-бара (отступы)</string>
+    <string name="pref_dock_corners">Скругление углов дока</string>
+    <string name="pref_dock_opacity">Прозрачность фона дока</string>
+    <string name="pref_dock_bg">Цвет фона док-бара</string>
+    <string name="pref_hide_dock_labels">Скрыть подписи в доке</string>
+    <string name="pref_hide_dock_labels_summary">Убрать текстовые подписи у иконок в нижней панели</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_desktop">Рабочий стол</string>
+    <string name="nav_settings">Настройки</string>
+
+    <!-- Folders -->
+    <string name="pref_theme_dock_folder">Стиль док-бара для папок</string>
+    <string name="pref_theme_dock_folder_summary">Матовое стекло и окантовка капсулы в точности как у док-бара</string>
+    <string name="pref_folder_corners">Скругление углов папок</string>
+    <string name="pref_folder_opacity">Прозрачность папок</string>
+    <string name="category_about">О модуле</string>
+    <string name="about_desc">Продвинутый твикер рабочего стола HyperOS и POCO Launcher</string>
+    <string name="app_version">Версия 1.2.0 · HyperCeiler Edition</string>
+
+    <!-- Animations -->
+    <string name="pref_unlock_animations">Флагманские анимации</string>
+    <string name="pref_unlock_animations_summary">Принудительно разблокировать плавные анимации открытия и закрытия</string>
+    <string name="pref_unlock_anim_rate">Скорость анимаций</string>
+    <string name="pref_unlock_anim_rate_summary">Разблокировать выбор частоты и скорости анимаций в настройках</string>
+
+    <!-- Widgets -->
+    <string name="pref_clock">Цвет виджета часов</string>
+    <string name="pref_clock_summary">Окрашивать системные часы в выбранный или системный акцентный цвет</string>
+    <string name="pref_clock_color">Выбор цвета часов</string>
+    <string name="color_system_default">По умолчанию</string>
+
+    <!-- Color Picker -->
+    <string name="color_picker_tab_palette">Палитра</string>
+    <string name="color_picker_tab_custom">Спектр (HSV)</string>
+    <string name="color_picker_tab_rgb">RGB и прозрачность</string>
+    <string name="color_picker_current">Текущий</string>
+    <string name="color_picker_new">Новый</string>
+    <string name="color_picker_apply">Применить цвет</string>
+    <string name="color_picker_reset">Сбросить</string>
+    <string name="color_picker_hue">Оттенок (Hue)</string>
+    <string name="color_picker_saturation">Насыщенность</string>
+    <string name="color_picker_value">Яркость</string>
+    <string name="color_picker_alpha">Прозрачность (Alpha)</string>
+    <string name="color_picker_red">Красный (R)</string>
+    <string name="color_picker_green">Зеленый (G)</string>
+    <string name="color_picker_blue">Синий (B)</string>
+    <string name="color_picker_hex">HEX код цвета</string>
+    <string name="color_picker_copy">Скопировать</string>
+    <string name="color_picker_paste">Вставить</string>
+    <string name="color_picker_presets">Готовые цвета (Material 3)</string>
+    <string name="color_picker_monet">Системные оттенки Monet</string>
+
+    <!-- System Actions -->
+    <string name="action_restart_launcher">Перезапустить рабочий стол</string>
+    <string name="action_restart_systemui">Перезапустить System UI</string>
+    <string name="action_restart_systemui_summary">Требуются Root-права. Шторка, навигация и уведомления перезагрузятся.</string>
+    <string name="action_restart">Перезапустить</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="toast_launcher_restarted">Рабочий стол успешно перезапущен</string>
+    <string name="toast_systemui_restarted">System UI перезапущен</string>
+    <string name="toast_root_denied">В Root-доступе отказано</string>
+    <string name="toast_service_missing">Служба LSPosed не подключена</string>
+</resources>

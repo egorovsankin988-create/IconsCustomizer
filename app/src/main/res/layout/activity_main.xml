@@ -39,4 +39,31 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
+    <!-- Sleek Floating Bottom Navigation Bar -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_bottom_nav"
+        style="?attr/materialCardViewFilledStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="32dp"
+        app:cardElevation="10dp"
+        app:strokeWidth="1.5dp"
+        app:strokeColor="?attr/colorOutlineVariant"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerHigh">
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_nav_view"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:background="@android:color/transparent"
+            app:elevation="0dp"
+            app:itemIconSize="24dp"
+            app:itemRippleColor="?attr/colorControlHighlight"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_nav_menu" />
+    </com.google.android.material.card.MaterialCardView>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

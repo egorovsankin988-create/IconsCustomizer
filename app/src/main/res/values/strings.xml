@@ -1,52 +1,117 @@
 <resources>
-    <string name="app_name">Icons Customizer</string>
-    <string name="xposed_desc">Icon packs, icon size, dock, folder and clock theming for the HyperOS 3+ launcher (Xiaomi, Redmi and POCO)</string>
+    <string name="app_name">HyperDesk</string>
+    <string name="xposed_desc">Ultimate POCO &amp; HyperOS desktop customizer: Material You dock bar, blur, icon packs, per-app icons, folder styling, label sizes and smooth animations.</string>
 
-    <string name="status_active">Module active</string>
-    <string name="status_inactive">Module not active</string>
-    <string name="status_inactive_summary">Enable Icons Customizer in LSPosed, scope it to System Launcher / POCO Launcher, then restart the launcher.</string>
+    <string name="status_active">HyperDesk Active</string>
+    <string name="status_inactive">Module Not Active</string>
+    <string name="status_inactive_summary">Enable HyperDesk in LSPosed, check System Launcher / POCO Launcher, and restart the launcher.</string>
     <string name="status_device">Device: %1$s</string>
     <string name="status_os">System: %1$s · Android %2$s</string>
     <string name="status_launcher">Launcher: %1$s</string>
-    <string name="status_os_unsupported">HyperOS 3 or newer is required. Some features may not work on this system.</string>
-    <string name="status_launcher_unsupported">The default home app is not the HyperOS/POCO launcher, so changes will not be visible.</string>
+    <string name="status_os_unsupported">HyperOS 1/2 or MIUI 14 recommended. Some features may vary by device.</string>
+    <string name="status_launcher_unsupported">The default launcher is not HyperOS/POCO launcher; desktop changes won\'t be visible.</string>
 
-    <string name="section_icons">Icons &amp; theming</string>
-    <string name="section_colors">Icon colors</string>
-    <string name="section_dock">Dock &amp; folders</string>
-    <string name="section_widgets">Widgets</string>
-    <string name="section_system">System</string>
+    <string name="section_icons">Icons &amp; Labels</string>
+    <string name="section_icon_packs">App Icon Customization</string>
+    <string name="section_dock">Material Dock Bar</string>
+    <string name="section_folders">Folders &amp; Shapes</string>
+    <string name="section_tweaks">Fluid Animations &amp; Speed</string>
+    <string name="section_widgets">Clock &amp; Colors</string>
+    <string name="section_system">System Actions</string>
 
-    <string name="pref_icon_packs">Custom icon packs</string>
-    <string name="pref_icon_packs_summary">Apply a third-party icon pack to the launcher</string>
+    <!-- Icons & Labels -->
+    <string name="pref_icon_size">Icon size</string>
+    <string name="pref_icon_label_size">Label text size</string>
+    <string name="pref_hide_icon_labels">Hide home screen labels</string>
+    <string name="pref_hide_icon_labels_summary">Minimalist clean look with no app titles on desktop</string>
+    <string name="pref_hide_icon_shadows">Hide icon shadows</string>
+    <string name="pref_hide_icon_shadows_summary">Disable shadow behind icons for a flat modern style</string>
     <string name="pref_homescreen_only">Home screen only</string>
     <string name="pref_homescreen_only_summary">Leave the app drawer icons untouched</string>
-    <string name="pref_choose_pack">Icon pack</string>
-    <string name="pref_apply_custom">Per-app icons</string>
-    <string name="pref_apply_custom_summary">Pick a specific icon for individual apps</string>
-    <string name="pref_icon_size">Icon size</string>
-    <string name="pref_override_colors">Override icon colors</string>
-    <string name="pref_override_colors_summary">Recolor icon pack icons with Monet colors</string>
-    <string name="pref_fg_color">Foreground color</string>
-    <string name="pref_bg_color">Background color</string>
-    <string name="pref_dock">Custom dock</string>
-    <string name="pref_dock_summary">Rounded dock background sized to your icons</string>
-    <string name="pref_dock_corners">Dock corner radius</string>
-    <string name="pref_theme_dock_folder">Theme dock &amp; folders</string>
-    <string name="pref_theme_dock_folder_summary">Use Monet colors for dock and folder backgrounds</string>
-    <string name="pref_dock_opacity">Dock &amp; folder opacity</string>
-    <string name="pref_dock_bg">Dock &amp; folder color</string>
-    <string name="pref_clock">Monet clock widget</string>
-    <string name="pref_clock_summary">Color clock widgets with your accent color</string>
-    <string name="pref_clock_color">Clock color</string>
-    <string name="color_system_default">System accent</string>
 
-    <string name="action_restart_launcher">Restart launcher</string>
+    <!-- Icon Packs -->
+    <string name="pref_icon_packs">Enable custom icon packs</string>
+    <string name="pref_icon_packs_summary">Apply third-party icon packs to the launcher</string>
+    <string name="pref_choose_pack">Choose Icon Pack</string>
+    <string name="pref_apply_custom">Customize per-app icons</string>
+    <string name="pref_apply_custom_summary">Pick individual icons for each application</string>
+    <string name="dialog_no_packs_title">No Icon Packs Found</string>
+    <string name="dialog_no_packs_msg">No third-party icon packs are installed on this device. Install any icon pack from Google Play or APK (e.g. Lawnicons, Delta, CandyCons), and it will immediately appear here.</string>
+    <string name="btn_search_google_play">Search in Google Play</string>
+    <string name="btn_change_icon">Change</string>
+    <string name="pref_override_colors">Monet icon colors</string>
+    <string name="pref_override_colors_summary">Recolor icon pack icons with system Monet dynamic colors</string>
+    <string name="pref_fg_color">Icon foreground color</string>
+    <string name="pref_bg_color">Icon background color</string>
+
+    <!-- Dock -->
+    <string name="pref_dock">Enable Material Dock Bar</string>
+    <string name="pref_dock_summary">Modern floating dock capsule with custom width and styling</string>
+    <string name="pref_dock_blur">Frosted glass blur</string>
+    <string name="pref_dock_blur_summary">Hardware background blur effect (Android 12+)</string>
+    <string name="pref_dock_material">Material You capsule styling</string>
+    <string name="pref_dock_material_summary">Sleek translucent accent outline and glass elevation</string>
+    <string name="pref_dock_width">Dock width</string>
+    <string name="pref_dock_height">Dock height (padding)</string>
+    <string name="pref_dock_corners">Dock corner radius</string>
+    <string name="pref_dock_opacity">Dock background opacity</string>
+    <string name="pref_dock_bg">Dock background color</string>
+    <string name="pref_hide_dock_labels">Hide dock icon labels</string>
+    <string name="pref_hide_dock_labels_summary">Remove text titles from apps placed in the dock</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_desktop">Desktop</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Folders -->
+    <string name="pref_theme_dock_folder">Dock-style frosted folders</string>
+    <string name="pref_theme_dock_folder_summary">Frosted glass and outline border matching the dock bar</string>
+    <string name="pref_folder_corners">Folder corner radius</string>
+    <string name="pref_folder_opacity">Folder opacity</string>
+    <string name="category_about">About HyperDesk</string>
+    <string name="about_desc">Ultimate desktop customizer for HyperOS &amp; POCO Launcher</string>
+    <string name="app_version">Version 1.2.0 · HyperCeiler Edition</string>
+
+    <!-- Animations -->
+    <string name="pref_unlock_animations">Unlock flagship animations</string>
+    <string name="pref_unlock_animations_summary">Force flagship opening/closing animations on all devices</string>
+    <string name="pref_unlock_anim_rate">Unlock animation rate</string>
+    <string name="pref_unlock_anim_rate_summary">Enable all animation speed levels in launcher settings</string>
+
+    <!-- Widgets -->
+    <string name="pref_clock">Monet clock widget</string>
+    <string name="pref_clock_summary">Recolor system clock widgets with custom or Monet accents</string>
+    <string name="pref_clock_color">Clock widget color</string>
+    <string name="color_system_default">System default</string>
+
+    <!-- Color Picker -->
+    <string name="color_picker_tab_palette">Palette</string>
+    <string name="color_picker_tab_custom">Spectrum (HSV)</string>
+    <string name="color_picker_tab_rgb">RGB &amp; Alpha</string>
+    <string name="color_picker_current">Current</string>
+    <string name="color_picker_new">New</string>
+    <string name="color_picker_apply">Apply color</string>
+    <string name="color_picker_reset">Reset</string>
+    <string name="color_picker_hue">Hue</string>
+    <string name="color_picker_saturation">Saturation</string>
+    <string name="color_picker_value">Brightness</string>
+    <string name="color_picker_alpha">Opacity (Alpha)</string>
+    <string name="color_picker_red">Red (R)</string>
+    <string name="color_picker_green">Green (G)</string>
+    <string name="color_picker_blue">Blue (B)</string>
+    <string name="color_picker_hex">HEX Color code</string>
+    <string name="color_picker_copy">Copy</string>
+    <string name="color_picker_paste">Paste</string>
+    <string name="color_picker_presets">Material 3 Presets</string>
+    <string name="color_picker_monet">System Monet Shades</string>
+
+    <!-- System Actions -->
+    <string name="action_restart_launcher">Restart Launcher</string>
     <string name="action_restart_systemui">Restart System UI</string>
-    <string name="action_restart_systemui_summary">Requires root. The status bar, notifications and navigation will briefly disappear.</string>
+    <string name="action_restart_systemui_summary">Requires root. Status bar, notifications, and navigation will briefly reload.</string>
     <string name="action_restart">Restart</string>
     <string name="action_cancel">Cancel</string>
-    <string name="toast_launcher_restarted">Launcher restarted</string>
+    <string name="toast_launcher_restarted">Launcher successfully restarted</string>
     <string name="toast_systemui_restarted">System UI restarted</string>
     <string name="toast_root_denied">Root access denied or unavailable</string>
     <string name="toast_service_missing">LSPosed service not connected</string>

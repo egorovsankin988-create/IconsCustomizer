@@ -10,24 +10,28 @@
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
-    app:cardCornerRadius="16dp">
+    app:cardCornerRadius="16dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="16dp">
+
         <ImageView
             android:id="@+id/appIcon"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
             android:layout_marginEnd="16dp"
             android:contentDescription="App Icon"
             android:src="@mipmap/ic_launcher_round" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
@@ -36,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:text="App Name"
                 android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:textColor="?android:attr/textColorPrimary" />
+                android:textColor="?attr/colorOnSurface" />
 
             <TextView
                 android:id="@+id/appAssignedIcon"
@@ -45,8 +49,21 @@
                 android:layout_marginTop="4dp"
                 android:text="assigned icon name"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="?android:attr/textColorSecondary" />
+                android:textColor="?attr/colorOnSurfaceVariant" />
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnChangeIcon"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:clickable="false"
+            android:focusable="false"
+            android:text="@string/btn_change_icon"
+            app:icon="@drawable/ic_chevron_right"
+            app:iconGravity="end" />
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

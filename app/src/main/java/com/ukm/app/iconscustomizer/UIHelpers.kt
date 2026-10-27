@@ -12,14 +12,14 @@ import java.util.concurrent.TimeUnit
 object UIHelpers {
 
     data class LauncherInfo(val packageName: String, val label: String) {
-        val isSupported get() = packageName in MainHook.LAUNCHER_PACKAGES
+        val isSupported get() = packageName in Constants.LAUNCHER_PACKAGES
     }
 
     /** Asks the hooked launcher (HyperOS or POCO) to restart itself; no root needed. */
     fun restartLauncher(context: Context): Boolean {
         return try {
-            for (pkg in MainHook.LAUNCHER_PACKAGES) {
-                context.sendBroadcast(Intent(MainHook.ACTION_RELOAD).setPackage(pkg))
+            for (pkg in Constants.LAUNCHER_PACKAGES) {
+                context.sendBroadcast(Intent(Constants.ACTION_RELOAD).setPackage(pkg))
             }
             true
         } catch (e: Exception) {
@@ -30,8 +30,8 @@ object UIHelpers {
 
     /** Blocking; call off the main thread. Falls back to the module broadcast without root. */
     fun forceRestartLauncher(context: Context): Boolean {
-        val pkg = getDefaultLauncher(context)?.packageName?.takeIf { it in MainHook.LAUNCHER_PACKAGES }
-        val targets = pkg?.let { listOf(it) } ?: MainHook.LAUNCHER_PACKAGES
+        val pkg = getDefaultLauncher(context)?.packageName?.takeIf { it in Constants.LAUNCHER_PACKAGES }
+        val targets = pkg?.let { listOf(it) } ?: Constants.LAUNCHER_PACKAGES
         if (runAsRoot(targets.joinToString(" ; ") { "am force-stop $it" })) return true
         return restartLauncher(context)
     }
