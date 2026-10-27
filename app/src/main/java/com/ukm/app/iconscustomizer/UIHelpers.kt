@@ -12,14 +12,14 @@ import java.util.concurrent.TimeUnit
 object UIHelpers {
 
     data class LauncherInfo(val packageName: String, val label: String) {
-        val isSupported get() = packageName in MainHook.LAUNCHER_PACKAGES
+        val isSupported get() = packageName in Constants.LAUNCHER_PACKAGES
     }
 
     /** Asks the hooked launcher (HyperOS or POCO) to restart itself; no root needed. */
     fun restartLauncher(context: Context): Boolean {
         return try {
-            for (pkg in MainHook.LAUNCHER_PACKAGES) {
-                context.sendBroadcast(Intent(MainHook.ACTION_RELOAD).setPackage(pkg))
+            for (pkg in Constants.LAUNCHER_PACKAGES) {
+                context.sendBroadcast(Intent(Constants.ACTION_RELOAD).setPackage(pkg))
             }
             true
         } catch (e: Exception) {
@@ -30,8 +30,8 @@ object UIHelpers {
 
     /** Blocking; call off the main thread. Falls back to the module broadcast without root. */
     fun forceRestartLauncher(context: Context): Boolean {
-        val pkg = getDefaultLauncher(context)?.packageName?.takeIf { it in MainHook.LAUNCHER_PACKAGES }
-        val targets = pkg?.let { listOf(it) } ?: MainHook.LAUNCHER_PACKAGES
+        val pkg = getDefaultLauncher(context)?.packageName?.takeIf { it in Constants.LAUNCHER_PACKAGES }
+        val targets = pkg?.let { listOf(it) } ?: Constants.LAUNCHER_PACKAGES
         if (runAsRoot(targets.joinToString(" ; ") { "am force-stop $it" })) return true
         return restartLauncher(context)
     }
@@ -93,18 +93,18 @@ object UIHelpers {
         return LauncherInfo(info.packageName, info.applicationInfo.loadLabel(pm).toString())
     }
 
+    /** Writes a setting (LSPosed remote prefs + local mirror). */
     fun pushRemotePref(changedKey: String, newValue: Any): Boolean {
-        val service = App.mService ?: return false
-        val remotePrefs = service.getRemotePreferences(PREF_NAME)
+        com.ukm.app.iconscustomizer.ui.PrefStore.put(changedKey, newValue)
+        return App.mService != null
+    }
 
-        remotePrefs.edit {
-            when (newValue) {
-                is String -> putString(changedKey, newValue.trim())
-                is Boolean -> putBoolean(changedKey, newValue)
-                is Int -> putInt(changedKey, newValue)
-            }
+    /** Applies Settings.Global animation scales (percent values) through root. */
+    fun setAnimationScales(values: List<Pair<String, Int>>): Boolean {
+        val cmd = values.joinToString(" && ") { (name, percent) ->
+            "settings put global $name ${String.format(java.util.Locale.US, "%.2f", percent / 100f)}"
         }
-        return true
+        return runAsRoot(cmd)
     }
 
     fun pushLocalPref(context: Context, changedKey: String, newValue: Any) {

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/hero_card"
+    style="@style/Widget.Material3.CardView.Filled"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    app:cardCornerRadius="32dp">
+
+    <LinearLayout
+        android:id="@+id/hero_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="22dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/hero_icon"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_sparkle" />
+
+            <TextView
+                android:id="@+id/hero_status"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/hero_summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/hero_chips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:chipSpacingVertical="4dp" />
+
+        <TextView
+            android:id="@+id/hero_warning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/hero_restart_launcher"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:text="@string/action_restart_launcher_short"
+                app:icon="@drawable/ic_home" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/hero_restart_systemui"
+                style="@style/Widget.Material3.Button.TonalButton.Icon"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="@string/action_restart_systemui_short"
+                app:icon="@drawable/ic_refresh" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

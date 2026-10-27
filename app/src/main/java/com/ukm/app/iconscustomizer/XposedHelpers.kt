@@ -333,7 +333,7 @@ object XposedHelpers {
             try {
                 findMethodBestMatch(obj.javaClass, methodName, *parameterTypes)
             } catch (e: NoSuchMethodError) {
-                Log.e(MainHook.TAG, "callMethod: ", e)
+                Log.e(Constants.TAG, "callMethod: ", e)
                 throw Exception("Method $methodName with matching params not found in ${obj.javaClass.name}")
             }
         }

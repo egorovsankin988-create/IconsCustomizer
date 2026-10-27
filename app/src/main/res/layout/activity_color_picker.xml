@@ -16,68 +16,542 @@
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:clipToPadding="false"
-        android:paddingBottom="48dp">
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="24dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Preview & Hex Input Card -->
             <com.google.android.material.card.MaterialCardView
                 style="?attr/materialCardViewFilledStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="8dp"
-                app:cardCornerRadius="20dp">
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="24dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
+                    android:orientation="vertical"
                     android:padding="20dp">
 
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:gravity="center"
+                        android:orientation="horizontal">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <!-- Current Color -->
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Current Selection"
-                            android:textAppearance="?attr/textAppearanceLabelMedium"
-                            android:textColor="?attr/colorPrimary" />
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/tvCurrentColorName"
-                            android:layout_width="wrap_content"
+                            <View
+                                android:id="@+id/view_current_color"
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:background="@drawable/bg_icon_container" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="@string/color_picker_current"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+                        </LinearLayout>
+
+                        <!-- Arrow -->
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+
+                        <!-- New Selected Color -->
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Default"
-                            android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                            android:textStyle="bold" />
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <View
+                                android:id="@+id/view_new_color"
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:background="@drawable/bg_icon_container" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="@string/color_picker_new"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+                        </LinearLayout>
                     </LinearLayout>
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnClearColor"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
+                    <!-- Hex Input Field with Copy/Paste -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Clear" />
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            app:boxCornerRadiusBottomEnd="16dp"
+                            app:boxCornerRadiusBottomStart="16dp"
+                            app:boxCornerRadiusTopEnd="16dp"
+                            app:boxCornerRadiusTopStart="16dp"
+                            app:prefixText="#">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_hex"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/color_picker_hex"
+                                android:imeOptions="actionDone"
+                                android:inputType="textCapCharacters"
+                                android:maxLength="9"
+                                android:typeface="monospace" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_copy_hex"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="@string/color_picker_copy" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_paste_hex"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="@string/color_picker_paste" />
+                    </LinearLayout>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <FrameLayout
-                android:id="@+id/gridContainer"
+            <!-- Mode Selector (Segmented Toggle: 3 Modes) -->
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/toggle_group_mode"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:checkedButton="@id/btn_mode_palette"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_mode_palette"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/color_picker_tab_palette" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_mode_custom"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/color_picker_tab_custom" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_mode_rgb"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/color_picker_tab_rgb" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <!-- TAB 1: Palette Container -->
+            <LinearLayout
+                android:id="@+id/container_palette"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/Widget.IconsCustomizer.SectionHeader"
+                    android:text="@string/color_picker_presets" />
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.IconsCustomizer.GroupCard">
+
+                    <LinearLayout
+                        android:id="@+id/layout_preset_swatches"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <TextView
+                    style="@style/Widget.IconsCustomizer.SectionHeader"
+                    android:text="@string/color_picker_monet" />
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.IconsCustomizer.GroupCard">
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="none">
+
+                        <FrameLayout
+                            android:id="@+id/gridContainer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingVertical="8dp" />
+                    </HorizontalScrollView>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- TAB 2: Custom HSV Sliders Container -->
+            <LinearLayout
+                android:id="@+id/container_custom"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.IconsCustomizer.GroupCard">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <!-- Hue Slider -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/Widget.IconsCustomizer.RowTitle"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/color_picker_hue" />
+
+                            <TextView
+                                android:id="@+id/tv_hue_value"
+                                style="@style/Widget.IconsCustomizer.RowSummary"
+                                android:text="0°"
+                                android:textAppearance="?attr/textAppearanceLabelLarge"
+                                android:textColor="?attr/colorPrimary" />
+                        </LinearLayout>
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_hue"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stepSize="1.0"
+                            android:value="0.0"
+                            android:valueFrom="0.0"
+                            android:valueTo="360.0"
+                            app:labelBehavior="floating"
+                            app:tickVisibilityMode="hidden" />
+
+                        <!-- Saturation Slider -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/Widget.IconsCustomizer.RowTitle"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/color_picker_saturation" />
+
+                            <TextView
+                                android:id="@+id/tv_saturation_value"
+                                style="@style/Widget.IconsCustomizer.RowSummary"
+                                android:text="100%"
+                                android:textAppearance="?attr/textAppearanceLabelLarge"
+                                android:textColor="?attr/colorPrimary" />
+                        </LinearLayout>
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_saturation"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stepSize="1.0"
+                            android:value="100.0"
+                            android:valueFrom="0.0"
+                            android:valueTo="100.0"
+                            app:labelBehavior="floating"
+                            app:tickVisibilityMode="hidden" />
+
+                        <!-- Value/Brightness Slider -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/Widget.IconsCustomizer.RowTitle"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/color_picker_value" />
+
+                            <TextView
+                                android:id="@+id/tv_value_value"
+                                style="@style/Widget.IconsCustomizer.RowSummary"
+                                android:text="100%"
+                                android:textAppearance="?attr/textAppearanceLabelLarge"
+                                android:textColor="?attr/colorPrimary" />
+                        </LinearLayout>
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_value"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stepSize="1.0"
+                            android:value="100.0"
+                            android:valueFrom="0.0"
+                            android:valueTo="100.0"
+                            app:labelBehavior="floating"
+                            app:tickVisibilityMode="hidden" />
+
+                        <!-- Alpha/Opacity Slider -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/Widget.IconsCustomizer.RowTitle"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/color_picker_alpha" />
+
+                            <TextView
+                                android:id="@+id/tv_alpha_value"
+                                style="@style/Widget.IconsCustomizer.RowSummary"
+                                android:text="100%"
+                                android:textAppearance="?attr/textAppearanceLabelLarge"
+                                android:textColor="?attr/colorPrimary" />
+                        </LinearLayout>
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_alpha"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stepSize="1.0"
+                            android:value="100.0"
+                            android:valueFrom="0.0"
+                            android:valueTo="100.0"
+                            app:labelBehavior="floating"
+                            app:tickVisibilityMode="hidden" />
+
+                        <!-- RGB Readout -->
+                        <TextView
+                            android:id="@+id/tv_rgb_readout"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="12dp"
+                            android:text="R: 255  G: 0  B: 0  A: 100%"
+                            android:textAppearance="?attr/textAppearanceLabelMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:typeface="monospace" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- TAB 3: RGB Channels Container -->
+            <LinearLayout
+                android:id="@+id/container_rgb"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.IconsCustomizer.GroupCard">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <!-- RED -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/Widget.IconsCustomizer.RowTitle"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/color_picker_red" />
+
+                            <TextView
+                                android:id="@+id/tv_red_value"
+                                style="@style/Widget.IconsCustomizer.RowSummary"
+                                android:text="255"
+                                android:textAppearance="?attr/textAppearanceLabelLarge"
+                                android:textColor="#E53935" />
+                        </LinearLayout>
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_red"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stepSize="1.0"
+                            android:value="255.0"
+                            android:valueFrom="0.0"
+                            android:valueTo="255.0"
+                            app:labelBehavior="floating"
+                            app:tickVisibilityMode="hidden" />
+
+                        <!-- GREEN -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/Widget.IconsCustomizer.RowTitle"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/color_picker_green" />
+
+                            <TextView
+                                android:id="@+id/tv_green_value"
+                                style="@style/Widget.IconsCustomizer.RowSummary"
+                                android:text="0"
+                                android:textAppearance="?attr/textAppearanceLabelLarge"
+                                android:textColor="#43A047" />
+                        </LinearLayout>
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_green"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stepSize="1.0"
+                            android:value="0.0"
+                            android:valueFrom="0.0"
+                            android:valueTo="255.0"
+                            app:labelBehavior="floating"
+                            app:tickVisibilityMode="hidden" />
+
+                        <!-- BLUE -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/Widget.IconsCustomizer.RowTitle"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/color_picker_blue" />
+
+                            <TextView
+                                android:id="@+id/tv_blue_value"
+                                style="@style/Widget.IconsCustomizer.RowSummary"
+                                android:text="0"
+                                android:textAppearance="?attr/textAppearanceLabelLarge"
+                                android:textColor="#1E88E5" />
+                        </LinearLayout>
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_blue"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stepSize="1.0"
+                            android:value="0.0"
+                            android:valueFrom="0.0"
+                            android:valueTo="255.0"
+                            app:labelBehavior="floating"
+                            app:tickVisibilityMode="hidden" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom Action Bar -->
+    <com.google.android.material.card.MaterialCardView
+        style="?attr/materialCardViewFilledStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="0dp"
+        app:strokeWidth="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnClearColor"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/color_picker_reset" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnApplyColor"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/color_picker_apply" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
 </LinearLayout>

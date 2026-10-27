@@ -62,6 +62,16 @@ class AllAppsFragment : Fragment(R.layout.fragment_all_apps) {
         val recyclerView = view.findViewById<RecyclerView>(R.id.appRecyclerView)
         iconPackPackage = arguments?.getString("EXTRA_ICON_PACK")
             ?: getPrefs().getString("icon_pack", "none").toString()
+        val tvActivePackTitle = view.findViewById<TextView?>(R.id.tvActivePackTitle)
+        if (tvActivePackTitle != null) {
+            val pm = requireContext().packageManager
+            val packLabel = try {
+                pm.getApplicationLabel(pm.getApplicationInfo(iconPackPackage, 0)).toString()
+            } catch (_: Throwable) {
+                iconPackPackage
+            }
+            tvActivePackTitle.text = packLabel
+        }
         showThemedIcons = getPrefs().getBoolean("preview_themed_icons", true)
         recyclerView.layoutManager =
             LinearLayoutManager(requireContext())
