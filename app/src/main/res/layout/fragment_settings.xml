@@ -1,128 +1,237 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/settings_scroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/colorBackground"
     android:clipToPadding="false"
-    android:padding="16dp">
+    android:paddingHorizontal="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="24dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
-            android:text="Icons &amp; Theming"
-            android:textColor="?attr/colorPrimary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
         <com.google.android.material.card.MaterialCardView
-            style="?attr/materialCardViewFilledStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="20dp">
+            android:id="@+id/card_status"
+            style="@style/Widget.IconsCustomizer.GroupCard"
+            app:cardBackgroundColor="?attr/colorPrimaryContainer">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:padding="20dp">
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_enable_theming"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:text="Allow Custom Icon Packs"
-                    android:textSize="16sp" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <com.google.android.material.divider.MaterialDivider
-                    android:id="@+id/div_homescreen_only"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    <ImageView
+                        android:id="@+id/img_status"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="16dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_check_circle"
+                        app:tint="?attr/colorOnPrimaryContainer" />
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_homescreen_only"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:text="Theme Home Screen Icons Only"
-                    android:textSize="16sp" />
+                    <TextView
+                        android:id="@+id/tv_status_title"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/status_inactive"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        android:textColor="?attr/colorOnPrimaryContainer" />
+                </LinearLayout>
 
-                <com.google.android.material.divider.MaterialDivider
-                    android:id="@+id/div_icon_pack"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                <TextView
+                    android:id="@+id/tv_status_summary"
+                    style="@style/Widget.IconsCustomizer.InfoLine"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/status_inactive_summary"
+                    android:textColor="?attr/colorOnPrimaryContainer" />
+
+                <TextView
+                    android:id="@+id/tv_status_device"
+                    style="@style/Widget.IconsCustomizer.InfoLine"
+                    android:layout_marginTop="12dp"
+                    android:textColor="?attr/colorOnPrimaryContainer" />
+
+                <TextView
+                    android:id="@+id/tv_status_os"
+                    style="@style/Widget.IconsCustomizer.InfoLine"
+                    android:textColor="?attr/colorOnPrimaryContainer" />
+
+                <TextView
+                    android:id="@+id/tv_status_launcher"
+                    style="@style/Widget.IconsCustomizer.InfoLine"
+                    android:textColor="?attr/colorOnPrimaryContainer" />
+
+                <TextView
+                    android:id="@+id/tv_status_warning"
+                    style="@style/Widget.IconsCustomizer.InfoLine"
+                    android:layout_marginTop="8dp"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:id="@+id/settings_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+        <TextView
+            style="@style/Widget.IconsCustomizer.SectionHeader"
+            android:text="@string/section_icons" />
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.IconsCustomizer.GroupCard">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingVertical="4dp">
+
+                <LinearLayout
+                    android:id="@+id/row_enable_theming"
+                    style="@style/Widget.IconsCustomizer.Row">
+
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_palette" />
+
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_icon_packs" />
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="@string/pref_icon_packs_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_enable_theming"
+                        style="@style/Widget.IconsCustomizer.RowSwitch" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/row_homescreen_only"
+                    style="@style/Widget.IconsCustomizer.Row">
+
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_home" />
+
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_homescreen_only" />
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="@string/pref_homescreen_only_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_homescreen_only"
+                        style="@style/Widget.IconsCustomizer.RowSwitch" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/row_icon_pack"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    style="@style/Widget.IconsCustomizer.Row">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Choose Icon Pack"
-                        android:textSize="16sp" />
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_apps" />
 
-                    <TextView
-                        android:id="@+id/tv_selected_icon_pack"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:alpha="0.7"
-                        android:text="None"
-                        android:textSize="14sp" />
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_choose_pack" />
+
+                        <TextView
+                            android:id="@+id/tv_selected_icon_pack"
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="None" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-
-                <com.google.android.material.divider.MaterialDivider
-                    android:id="@+id/div_apply_custom"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
 
                 <LinearLayout
                     android:id="@+id/row_apply_custom"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:padding="16dp">
+                    style="@style/Widget.IconsCustomizer.Row">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Apply Custom Icon to Specific Apps"
-                        android:textSize="16sp" />
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_smartphone" />
+
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_apply_custom" />
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="@string/pref_apply_custom_summary" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
 
-                <com.google.android.material.divider.MaterialDivider
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
-
                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingTop="16dp"
-                    android:paddingBottom="8dp">
+                    android:id="@+id/row_icon_size"
+                    style="@style/Widget.IconsCustomizer.SliderBlock">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Icon Size"
-                        android:textSize="16sp" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            style="@style/Widget.IconsCustomizer.RowIcon"
+                            android:src="@drawable/ic_resize" />
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="@string/pref_icon_size" />
+
+                        <TextView
+                            android:id="@+id/tv_icon_size_value"
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="180"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorPrimary" />
+                    </LinearLayout>
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_icon_size"
@@ -131,7 +240,9 @@
                         android:stepSize="1.0"
                         android:value="180.0"
                         android:valueFrom="180.0"
-                        android:valueTo="250.0" />
+                        android:valueTo="250.0"
+                        app:labelBehavior="floating"
+                        app:tickVisibilityMode="hidden" />
                 </LinearLayout>
 
             </LinearLayout>
@@ -139,146 +250,150 @@
 
         <TextView
             android:id="@+id/title_monet_colors"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
-            android:text="Icon Color Customization"
-            android:textColor="?attr/colorPrimary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            style="@style/Widget.IconsCustomizer.SectionHeader"
+            android:text="@string/section_colors" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_monet_colors"
-            style="?attr/materialCardViewFilledStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="20dp">
+            style="@style/Widget.IconsCustomizer.GroupCard">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:paddingVertical="4dp">
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_enable_monet"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:text="Override Icon Colors"
-                    android:textSize="16sp" />
+                <LinearLayout
+                    android:id="@+id/row_enable_monet"
+                    style="@style/Widget.IconsCustomizer.Row">
 
-                <com.google.android.material.divider.MaterialDivider
-                    android:id="@+id/div_monet_colors"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_palette" />
+
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_override_colors" />
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="@string/pref_override_colors_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_enable_monet"
+                        style="@style/Widget.IconsCustomizer.RowSwitch" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/row_monet_fg"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                    style="@style/Widget.IconsCustomizer.Row">
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Choose Foreground Color"
-                        android:textSize="16sp" />
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_opacity" />
+
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_fg_color" />
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/img_preview_fg"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp" />
+                        style="@style/Widget.IconsCustomizer.ColorSwatch" />
                 </LinearLayout>
-
-                <com.google.android.material.divider.MaterialDivider
-                    android:id="@+id/div_monet_bg"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
 
                 <LinearLayout
                     android:id="@+id/row_monet_bg"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                    style="@style/Widget.IconsCustomizer.Row">
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Choose Background Color"
-                        android:textSize="16sp" />
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_folder" />
+
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_bg_color" />
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/img_preview_bg"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp" />
+                        style="@style/Widget.IconsCustomizer.ColorSwatch" />
                 </LinearLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
-            android:text="Dock &amp; Folders"
-            android:textColor="?attr/colorPrimary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            style="@style/Widget.IconsCustomizer.SectionHeader"
+            android:text="@string/section_dock" />
 
         <com.google.android.material.card.MaterialCardView
-            style="?attr/materialCardViewFilledStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="20dp">
+            style="@style/Widget.IconsCustomizer.GroupCard">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:paddingVertical="4dp">
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_enable_dock"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:text="Enable Dock"
-                    android:textSize="16sp" />
+                <LinearLayout
+                    android:id="@+id/row_enable_dock"
+                    style="@style/Widget.IconsCustomizer.Row">
 
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_dock" />
 
-                <com.google.android.material.divider.MaterialDivider
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_dock" />
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="@string/pref_dock_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_enable_dock"
+                        style="@style/Widget.IconsCustomizer.RowSwitch" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/row_dock_corners"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingTop="16dp"
-                    android:paddingBottom="8dp">
+                    style="@style/Widget.IconsCustomizer.SliderBlock">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Dock Corner Radius"
-                        android:textSize="16sp" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            style="@style/Widget.IconsCustomizer.RowIcon"
+                            android:src="@drawable/ic_rounded_corner" />
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="@string/pref_dock_corners" />
+
+                        <TextView
+                            android:id="@+id/tv_dock_corners_value"
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="60"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorPrimary" />
+                    </LinearLayout>
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_dock_corners"
@@ -287,41 +402,62 @@
                         android:stepSize="1.0"
                         android:value="60.0"
                         android:valueFrom="0.0"
-                        android:valueTo="255.0" />
+                        android:valueTo="255.0"
+                        app:labelBehavior="floating"
+                        app:tickVisibilityMode="hidden" />
                 </LinearLayout>
 
-                <com.google.android.material.divider.MaterialDivider
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                <LinearLayout
+                    android:id="@+id/row_monet_dock_folder"
+                    style="@style/Widget.IconsCustomizer.Row">
 
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_folder" />
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_monet_dock_folder"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:text="Theme Dock and Folders"
-                    android:textSize="16sp" />
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
 
-                <com.google.android.material.divider.MaterialDivider
-                    android:id="@+id/div_dock_folder"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_theme_dock_folder" />
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="@string/pref_theme_dock_folder_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_monet_dock_folder"
+                        style="@style/Widget.IconsCustomizer.RowSwitch" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/row_dock_opacity"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingTop="16dp"
-                    android:paddingBottom="8dp">
+                    style="@style/Widget.IconsCustomizer.SliderBlock">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Dock Folder Opacity"
-                        android:textSize="16sp" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            style="@style/Widget.IconsCustomizer.RowIcon"
+                            android:src="@drawable/ic_opacity" />
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="@string/pref_dock_opacity" />
+
+                        <TextView
+                            android:id="@+id/tv_dock_opacity_value"
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="200"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorPrimary" />
+                    </LinearLayout>
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_dock_opacity"
@@ -330,110 +466,134 @@
                         android:stepSize="1.0"
                         android:value="200.0"
                         android:valueFrom="100.0"
-                        android:valueTo="255.0" />
+                        android:valueTo="255.0"
+                        app:labelBehavior="floating"
+                        app:tickVisibilityMode="hidden" />
                 </LinearLayout>
-
-                <com.google.android.material.divider.MaterialDivider
-                    android:id="@+id/div_dock_bg"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
 
                 <LinearLayout
                     android:id="@+id/row_dock_bg"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                    style="@style/Widget.IconsCustomizer.Row">
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Dock And Folder Background Color"
-                        android:textSize="16sp" />
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_palette" />
+
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_dock_bg" />
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/img_preview_dock_bg"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp" />
+                        style="@style/Widget.IconsCustomizer.ColorSwatch" />
                 </LinearLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
-            android:text="Widgets"
-            android:textColor="?attr/colorPrimary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            style="@style/Widget.IconsCustomizer.SectionHeader"
+            android:text="@string/section_widgets" />
 
         <com.google.android.material.card.MaterialCardView
-            style="?attr/materialCardViewFilledStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="20dp">
+            style="@style/Widget.IconsCustomizer.GroupCard">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:paddingVertical="4dp">
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_monet_clock"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:text="Monet Clock Widget"
-                    android:textSize="16sp" />
+                <LinearLayout
+                    android:id="@+id/row_monet_clock"
+                    style="@style/Widget.IconsCustomizer.Row">
 
-                <com.google.android.material.divider.MaterialDivider
-                    android:id="@+id/div_clock_color"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_schedule" />
+
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_clock" />
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowSummary"
+                            android:text="@string/pref_clock_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_monet_clock"
+                        style="@style/Widget.IconsCustomizer.RowSwitch" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/row_clock_color"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                    style="@style/Widget.IconsCustomizer.Row">
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Clock Widget Color"
-                        android:textSize="16sp" />
+                    <ImageView
+                        style="@style/Widget.IconsCustomizer.RowIcon"
+                        android:src="@drawable/ic_widgets" />
+
+                    <LinearLayout style="@style/Widget.IconsCustomizer.RowTexts">
+
+                        <TextView
+                            style="@style/Widget.IconsCustomizer.RowTitle"
+                            android:text="@string/pref_clock_color" />
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/img_preview_clock"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp" />
+                        style="@style/Widget.IconsCustomizer.ColorSwatch" />
                 </LinearLayout>
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_restart_launcher"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginBottom="32dp"
-            android:text="Restart Launcher"
-            android:textSize="16sp"
-            app:cornerRadius="16dp" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/Widget.IconsCustomizer.SectionHeader"
+            android:text="@string/section_system" />
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.IconsCustomizer.GroupCard">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_restart_launcher"
+                    style="@style/Widget.Material3.Button.TonalButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="@string/action_restart_launcher"
+                    app:icon="@drawable/ic_home" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_restart_systemui"
+                    style="@style/Widget.Material3.Button.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/action_restart_systemui"
+                    app:icon="@drawable/ic_refresh" />
+
+                <TextView
+                    style="@style/Widget.IconsCustomizer.RowSummary"
+                    android:layout_marginHorizontal="4dp"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/action_restart_systemui_summary"
+                    android:textAppearance="?attr/textAppearanceBodySmall" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

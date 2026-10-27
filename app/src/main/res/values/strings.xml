@@ -1,6 +1,53 @@
 <resources>
     <string name="app_name">Icons Customizer</string>
-    <string name="xposed_desc">Icons Customizer Module For HyperOS</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="xposed_desc">Icon packs, icon size, dock, folder and clock theming for the HyperOS 3+ launcher (Xiaomi, Redmi and POCO)</string>
+
+    <string name="status_active">Module active</string>
+    <string name="status_inactive">Module not active</string>
+    <string name="status_inactive_summary">Enable Icons Customizer in LSPosed, scope it to System Launcher / POCO Launcher, then restart the launcher.</string>
+    <string name="status_device">Device: %1$s</string>
+    <string name="status_os">System: %1$s · Android %2$s</string>
+    <string name="status_launcher">Launcher: %1$s</string>
+    <string name="status_os_unsupported">HyperOS 3 or newer is required. Some features may not work on this system.</string>
+    <string name="status_launcher_unsupported">The default home app is not the HyperOS/POCO launcher, so changes will not be visible.</string>
+
+    <string name="section_icons">Icons &amp; theming</string>
+    <string name="section_colors">Icon colors</string>
+    <string name="section_dock">Dock &amp; folders</string>
+    <string name="section_widgets">Widgets</string>
+    <string name="section_system">System</string>
+
+    <string name="pref_icon_packs">Custom icon packs</string>
+    <string name="pref_icon_packs_summary">Apply a third-party icon pack to the launcher</string>
+    <string name="pref_homescreen_only">Home screen only</string>
+    <string name="pref_homescreen_only_summary">Leave the app drawer icons untouched</string>
+    <string name="pref_choose_pack">Icon pack</string>
+    <string name="pref_apply_custom">Per-app icons</string>
+    <string name="pref_apply_custom_summary">Pick a specific icon for individual apps</string>
+    <string name="pref_icon_size">Icon size</string>
+    <string name="pref_override_colors">Override icon colors</string>
+    <string name="pref_override_colors_summary">Recolor icon pack icons with Monet colors</string>
+    <string name="pref_fg_color">Foreground color</string>
+    <string name="pref_bg_color">Background color</string>
+    <string name="pref_dock">Custom dock</string>
+    <string name="pref_dock_summary">Rounded dock background sized to your icons</string>
+    <string name="pref_dock_corners">Dock corner radius</string>
+    <string name="pref_theme_dock_folder">Theme dock &amp; folders</string>
+    <string name="pref_theme_dock_folder_summary">Use Monet colors for dock and folder backgrounds</string>
+    <string name="pref_dock_opacity">Dock &amp; folder opacity</string>
+    <string name="pref_dock_bg">Dock &amp; folder color</string>
+    <string name="pref_clock">Monet clock widget</string>
+    <string name="pref_clock_summary">Color clock widgets with your accent color</string>
+    <string name="pref_clock_color">Clock color</string>
+    <string name="color_system_default">System accent</string>
+
+    <string name="action_restart_launcher">Restart launcher</string>
+    <string name="action_restart_systemui">Restart System UI</string>
+    <string name="action_restart_systemui_summary">Requires root. The status bar, notifications and navigation will briefly disappear.</string>
+    <string name="action_restart">Restart</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="toast_launcher_restarted">Launcher restarted</string>
+    <string name="toast_systemui_restarted">System UI restarted</string>
+    <string name="toast_root_denied">Root access denied or unavailable</string>
+    <string name="toast_service_missing">LSPosed service not connected</string>
 </resources>

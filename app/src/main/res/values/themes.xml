@@ -1,4 +1,20 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
+    <!-- Dynamic (Monet) colors are applied on top of this in App via DynamicColors. -->
     <style name="Theme.IconsCustomizer" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#3F5F90</item>
+        <item name="colorSecondaryContainer">#DAE2F9</item>
+        <item name="colorOnSecondaryContainer">#131C2B</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.IconsCustomizer.Large</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.IconsCustomizer.ExtraLarge</item>
+        <item name="materialSwitchStyle">@style/Widget.Material3.CompoundButton.MaterialSwitch</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+    </style>
+
+    <style name="ShapeAppearance.IconsCustomizer.Large" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <style name="ShapeAppearance.IconsCustomizer.ExtraLarge" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerSize">28dp</item>
     </style>
 </resources>
