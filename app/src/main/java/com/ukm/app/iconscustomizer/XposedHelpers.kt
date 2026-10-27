@@ -121,7 +121,7 @@ object XposedHelpers {
     ): Method? {
         return try {
             findMethodExact(clazz, methodName, *parameterTypes)
-        } catch (e: NoSuchMethodError) {
+        } catch (e: Exception) {
             null
         }
     }
@@ -349,7 +349,7 @@ object XposedHelpers {
 
         val method = try {
             findMethodExact(clazz, methodName, *parameterTypes)
-        } catch (e: NoSuchMethodError) {
+        } catch (e: Exception) {
             findMethodBestMatch(clazz, methodName, *parameterTypes)
         }
 

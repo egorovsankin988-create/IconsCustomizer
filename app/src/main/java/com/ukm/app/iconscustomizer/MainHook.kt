@@ -1,5 +1,7 @@
 package com.ukm.app.iconscustomizer
 
+import android.app.Application
+import android.app.Instrumentation
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -14,15 +16,12 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
-import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
 import org.w3c.dom.Element
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function.Consumer
 import android.R as Resources
 
 
@@ -30,9 +29,13 @@ class MainHook : XposedModule() {
 
     companion object {
         const val TAG = "UKMTAG"
+        const val ACTION_RELOAD = "com.ukm.app.RELOAD_ICONS"
+
+        /** HyperOS system launcher (CN + most global ROMs) and the POCO launcher. */
+        val LAUNCHER_PACKAGES = listOf("com.miui.home", "com.mi.android.globallauncher")
     }
 
-    private var isFirstLaunch = true
+    private var launcherPackage = ""
     private var prefManager: SharedPreferences? = null
     private var launcherContext: Context? = null
     private val resolvedCache = ConcurrentHashMap<String, String>()
@@ -48,6 +51,13 @@ class MainHook : XposedModule() {
     private var dockCornerRadius = 60
     private var iconSize: Int = 180
 
+    // The first onWallpaperColorChanged after process start is the launcher's own init
+    // call; only later ones are real palette changes.
+    @Volatile private var launcherColorCallbackSeen = false
+    @Volatile private var dockColorCallbackSeen = false
+
+    private val iconPackActive get() = isThemedIconEnabled && iconPackPackageName != "none"
+
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
         super.onModuleLoaded(param)
         prefManager = getRemotePreferences(MainActivity.PREF_NAME)
@@ -55,264 +65,281 @@ class MainHook : XposedModule() {
 
     override fun onPackageLoaded(packageParam: XposedModuleInterface.PackageLoadedParam) {
         super.onPackageLoaded(packageParam)
-        when (packageParam.packageName) {
-            "com.miui.home", "com.mi.android.globallauncher" -> {
-                isThemedIconEnabled = prefManager?.getBoolean("enable_themed_icons", false) ?: false
-                isDockEnabled = prefManager?.getBoolean("enable_dock", false) ?: false
-                themeHomeScreenOnly =
-                    prefManager?.getBoolean("themed_icons_homescreen_only", false) ?: false
-                isThemeDockFolderEnabled =
-                    prefManager?.getBoolean("theme_dock_folder", false) ?: false
-                isThemedClockEnabled =
-                    prefManager?.getBoolean("enable_themed_clock", false) ?: false
-                iconPackPackageName = prefManager?.getString("icon_pack", "none") ?: "none"
-                dockCornerRadius = prefManager?.getInt("dock_corner_radius", 60) ?: 60
-                if (isThemeDockFolderEnabled) {
-                    dockFolderBgColor = prefManager?.getInt("monet_folder_dock_bg_color", 0) ?: 0
-                    dockFolderOpacity = prefManager?.getInt("dock_folder_opacity", 200) ?: 200
-                }
-                if (isThemedClockEnabled) {
-                    clockWidgetColor = prefManager?.getInt("monet_clock_color", 0) ?: 0
-                }
+        if (packageParam.packageName !in LAUNCHER_PACKAGES || !packageParam.isFirstPackage) return
+        launcherPackage = packageParam.packageName
 
-                iconSize = prefManager?.getInt("icon_size", 180) ?: 180
-                hookLauncher(packageParam)
-            }
+        val prefs = prefManager
+        isThemedIconEnabled = prefs?.getBoolean("enable_themed_icons", false) ?: false
+        isDockEnabled = prefs?.getBoolean("enable_dock", false) ?: false
+        themeHomeScreenOnly = prefs?.getBoolean("themed_icons_homescreen_only", false) ?: false
+        isThemeDockFolderEnabled = prefs?.getBoolean("theme_dock_folder", false) ?: false
+        isThemedClockEnabled = prefs?.getBoolean("enable_themed_clock", false) ?: false
+        iconPackPackageName = prefs?.getString("icon_pack", "none") ?: "none"
+        dockCornerRadius = prefs?.getInt("dock_corner_radius", 60) ?: 60
+        if (isThemeDockFolderEnabled) {
+            dockFolderBgColor = prefs?.getInt("monet_folder_dock_bg_color", 0) ?: 0
+            dockFolderOpacity = prefs?.getInt("dock_folder_opacity", 200) ?: 200
+        }
+        if (isThemedClockEnabled) {
+            clockWidgetColor = prefs?.getInt("monet_clock_color", 0) ?: 0
+        }
+        iconSize = prefs?.getInt("icon_size", 180) ?: 180
 
-            else -> return
+        log(Log.INFO, TAG, "Hooking $launcherPackage (${android.os.Build.MODEL}, SDK ${android.os.Build.VERSION.SDK_INT})")
+        hookLauncher(packageParam.defaultClassLoader)
+    }
+
+    /**
+     * Every hook is isolated: launcher builds differ between HyperOS versions, CN/global ROMs
+     * and the POCO launcher, so a class missing on one device must not disable the others.
+     */
+    private fun hookLauncher(classLoader: ClassLoader) {
+        safeHook("launcherContext") { setLauncherContext() }
+        safeHook("iconSize") { iconSizeHook(classLoader) }
+        if (isThemedClockEnabled) safeHook("clock") { launcherClockHook(classLoader) }
+        if (isThemeDockFolderEnabled) safeHook("folder") { folderHook(classLoader) }
+        if (isDockEnabled) dockHook(classLoader)
+        if (iconPackActive) {
+            safeHook("iconPack") { iconPackHook(classLoader) }
+            safeHook("defaultIconFlag") { defaultIconFlagHook(classLoader) }
+        }
+        safeHook("wallpaperColor") { wallpaperColorChangedHook(classLoader) }
+    }
+
+    private inline fun safeHook(name: String, block: () -> Unit) {
+        try {
+            block()
+        } catch (t: Throwable) {
+            log(Log.WARN, TAG, "Hook '$name' unavailable on $launcherPackage: $t")
         }
     }
 
-    private fun hookLauncher(packageParam: XposedModuleInterface.PackageLoadedParam) {
-        val classLoader = packageParam.defaultClassLoader
-        iconSizeHook(classLoader)
-        setLauncherContext(classLoader)
-        if (isThemedClockEnabled) {
-            launcherClockHook(classLoader)
-        }
-        if (isThemeDockFolderEnabled) {
-            folderHook(classLoader)
-        }
-        if (isDockEnabled) {
-            dockHook(classLoader)
-        }
-        if (isThemedIconEnabled && iconPackPackageName != "none") {
-            iconPackHook(classLoader)
-        }
-
-        wallpaperColorChangedHook(classLoader)
-
-        val deviceConfigsClass = XposedHelpers.findClass(
-            "sources/com/miui/home/common/device/DeviceConfigs.java",
-            classLoader
-        )
-        val method =
-            XposedHelpers.findMethodExact(
-                deviceConfigsClass,
-                "updateIsDefaultIcon",
-                Context::class.java
-            )
-        hook(method).intercept { chain ->
-            chain.proceed()
-            if (isThemedIconEnabled && iconPackPackageName != "none") {
-                XposedHelpers.setStaticBooleanField(deviceConfigsClass, "sIsDefaultIcon", false)
+    private fun findClassAny(classLoader: ClassLoader, vararg names: String): Class<*> {
+        for (name in names) {
+            try {
+                return XposedHelpers.findClass(name, classLoader)
+            } catch (_: Throwable) {
             }
         }
+        throw ClassNotFoundException(names.joinToString(" | "))
+    }
 
+    /** Exact match first, then the single declared method with that name and arity. */
+    private fun findMethodLoose(clazz: Class<*>, name: String, vararg params: Class<*>): Method {
+        XposedHelpers.findMethodExactIfExists(clazz, name, *params)?.let { return it }
+        var current: Class<*>? = clazz
+        while (current != null) {
+            current.declaredMethods.firstOrNull {
+                it.name == name && it.parameterTypes.size == params.size
+            }?.let {
+                it.isAccessible = true
+                return it
+            }
+            current = current.superclass
+        }
+        throw NoSuchMethodException("${clazz.name}#$name/${params.size}")
+    }
+
+    private fun defaultIconFlagHook(classLoader: ClassLoader) {
+        val deviceConfigsClass = findClassAny(
+            classLoader,
+            "com.miui.home.common.device.DeviceConfigs",
+            "com.miui.home.launcher.DeviceConfig"
+        )
+        val method = findMethodLoose(deviceConfigsClass, "updateIsDefaultIcon", Context::class.java)
+        hook(method).intercept { chain ->
+            val result = chain.proceed()
+            if (iconPackActive) {
+                XposedHelpers.setStaticBooleanField(deviceConfigsClass, "sIsDefaultIcon", false)
+            }
+            result
+        }
     }
 
     private fun wallpaperColorChangedHook(classLoader: ClassLoader) {
-        val baseLauncherClass =
-            XposedHelpers.findClass("sources/com/miui/home/launcher/BaseLauncher.java", classLoader)
-        val onWallpaperColorChangedMethod =
-            XposedHelpers.findMethodExact(baseLauncherClass, "onWallpaperColorChanged")
-        hook(onWallpaperColorChangedMethod).intercept { chain ->
-            chain.proceed()
-            val isRestart = getLocalStatePrefs()?.getBoolean("isRestart", false) == true
-            if (!isFirstLaunch && !isRestart) {
-                val baseLauncher = chain.thisObject
-                if (isThemedIconEnabled && iconPackPackageName != "none") {
+        val baseLauncherClass = findClassAny(
+            classLoader,
+            "com.miui.home.launcher.BaseLauncher",
+            "com.miui.home.launcher.Launcher"
+        )
+        val method = XposedHelpers.findMethodExact(baseLauncherClass, "onWallpaperColorChanged")
+        hook(method).intercept { chain ->
+            val result = chain.proceed()
+            if (!launcherColorCallbackSeen) {
+                launcherColorCallbackSeen = true
+                return@intercept result
+            }
+            val baseLauncher = chain.thisObject ?: return@intercept result
+            if (iconPackActive) {
+                try {
                     XposedHelpers.callMethod(baseLauncher, "refreshAllAppsIcon")
-                }
-                if (isThemedClockEnabled) {
-                    refreshMaMlWidgets(baseLauncher)
-                    refreshGadgets(baseLauncher)
+                } catch (t: Throwable) {
+                    log(Log.WARN, TAG, "refreshAllAppsIcon failed: $t")
                 }
             }
+            if (isThemedClockEnabled) {
+                refreshMaMlWidgets(baseLauncher)
+                refreshGadgets(baseLauncher)
+            }
+            result
         }
     }
 
     private fun launcherClockHook(classLoader: ClassLoader) {
-        try {
-            val factoryClass =
-                XposedHelpers.findClass("com.miui.maml.elements.ScreenElementFactory", classLoader)
-            val rootClass = XposedHelpers.findClass("com.miui.maml.ScreenElementRoot", classLoader)
-            val createInstanceMethod = XposedHelpers.findMethodExact(
-                factoryClass,
-                "createInstance",
-                Element::class.java,
-                rootClass
-            )
-            hook(createInstanceMethod).intercept { param ->
-                val domElement = param.args[0] as? Element ?: return@intercept param.proceed()
-                val tagName = domElement.tagName
+        val factoryClass =
+            XposedHelpers.findClass("com.miui.maml.elements.ScreenElementFactory", classLoader)
+        val rootClass = XposedHelpers.findClass("com.miui.maml.ScreenElementRoot", classLoader)
+        val createInstanceMethod = XposedHelpers.findMethodExact(
+            factoryClass,
+            "createInstance",
+            Element::class.java,
+            rootClass
+        )
+        hook(createInstanceMethod).intercept { param ->
+            val domElement = param.args[0] as? Element ?: return@intercept param.proceed()
+            val tagName = domElement.tagName
+            if (tagName == "DateTime" || tagName == "Time" || tagName == "Text") {
                 try {
-                    val clockWidgetFgColor = if (clockWidgetColor != 0) {
-                        launcherContext?.getColor(clockWidgetColor)
-                    } else {
-                        launcherContext?.getColor(Resources.color.system_accent1_200)
-                    }
-                    if (tagName == "DateTime" || tagName == "Time" || tagName == "Text") {
-                        val hexColor = String.format("#%08X", clockWidgetFgColor)
-                        domElement.removeAttribute("colorExp")
-                        domElement.removeAttribute("colorLight")
-                        domElement.removeAttribute("colorDark")
-                        domElement.setAttribute("color", hexColor)
-                    }
-//                    else if (tagName == "Rectangle") {
-//                        val bgColor = launcherContext?.getColor(R.color.system_accent1_900)
-//                        domElement.setAttribute("fillColor", String.format("#%08X", bgColor))
-//                    }
+                    val ctx = launcherContext ?: return@intercept param.proceed()
+                    val color = ctx.getColor(
+                        if (clockWidgetColor != 0) clockWidgetColor else Resources.color.system_accent1_200
+                    )
+                    domElement.removeAttribute("colorExp")
+                    domElement.removeAttribute("colorLight")
+                    domElement.removeAttribute("colorDark")
+                    domElement.setAttribute("color", String.format("#%08X", color))
                 } catch (e: Exception) {
                     Log.e(TAG, "launcherClockHook: ", e)
-                    return@intercept param.proceed()
                 }
-                return@intercept param.proceed()
             }
-        } catch (e: Exception) {
-            Log.e("MAML Hook", "Setup Error: ", e)
+            param.proceed()
         }
     }
 
-    fun folderHook(classLoader: ClassLoader) {
-        val clazz = XposedHelpers.findClass("com.miui.home.model.core.IconCache", classLoader)
+    private fun folderHook(classLoader: ClassLoader) {
+        val clazz = findClassAny(
+            classLoader,
+            "com.miui.home.model.core.IconCache",
+            "com.miui.home.launcher.IconCache"
+        )
         val getDrawableMethod = XposedHelpers.findMethodExact(clazz, "getDrawable", Int::class.java)
 
         hook(getDrawableMethod).intercept { chain ->
             val id = chain.args[0] as Int
-
-            if (id == 4097 || id == 4098 || id == 4099 || id == 4100 || id == 4104) {
-                val shape = GradientDrawable().apply {
+            val ctx = launcherContext
+            if (ctx != null && (id == 4097 || id == 4098 || id == 4099 || id == 4100 || id == 4104)) {
+                return@intercept GradientDrawable().apply {
                     shape = GradientDrawable.RECTANGLE
                     setColor(
-                        if (isThemeDockFolderEnabled && dockFolderBgColor != 0) {
-                            ContextCompat.getColor(launcherContext!!, dockFolderBgColor)
-                        } else {
-                            ContextCompat.getColor(
-                                launcherContext!!,
-                                Resources.color.system_accent1_600
-                            )
-                        }
+                        ContextCompat.getColor(
+                            ctx,
+                            if (dockFolderBgColor != 0) dockFolderBgColor else Resources.color.system_accent1_600
+                        )
                     )
                     alpha = dockFolderOpacity
                     cornerRadius = 66f
                 }
-                return@intercept shape
             }
-
-            return@intercept chain.proceed()
+            chain.proceed()
         }
     }
 
-    fun dockHook(classLoader: ClassLoader) {
-        val hotSeatsClass = XposedHelpers.findClass(
-            "com.miui.home.launcher.hotseats.HotSeats",
-            classLoader
-        )
-
-        val hotSeatsScreenClass = XposedHelpers.findClass(
-            "com.miui.home.launcher.hotseats.HotSeatsScreenViewContent",
-            classLoader
-        )
-
-        val onMeasure = XposedHelpers.findMethodExact(
-            hotSeatsClass,
-            "onMeasure",
-            Int::class.java,
-            Int::class.java
-        )
-        hook(onMeasure).intercept { chain ->
-            chain.proceed()
-            val hotSeats = chain.thisObject as View
-            val lp = hotSeats.layoutParams as? ViewGroup.MarginLayoutParams
-            lp?.let {
-                val dynamicSide = maxOf(10, 160 - (iconSize / 2))
-                if (it.leftMargin != dynamicSide || it.rightMargin != dynamicSide) {
-                    it.leftMargin = dynamicSide
-                    it.rightMargin = dynamicSide
-                    hotSeats.layoutParams = it
+    private fun dockHook(classLoader: ClassLoader) {
+        safeHook("dockMeasure") {
+            val hotSeatsClass = findClassAny(
+                classLoader,
+                "com.miui.home.launcher.hotseats.HotSeats",
+                "com.miui.home.launcher.HotSeats"
+            )
+            val onMeasure = XposedHelpers.findMethodExact(
+                hotSeatsClass, "onMeasure", Int::class.java, Int::class.java
+            )
+            hook(onMeasure).intercept { chain ->
+                val result = chain.proceed()
+                val hotSeats = chain.thisObject as View
+                (hotSeats.layoutParams as? ViewGroup.MarginLayoutParams)?.let {
+                    val dynamicSide = maxOf(10, 160 - (iconSize / 2))
+                    if (it.leftMargin != dynamicSide || it.rightMargin != dynamicSide) {
+                        it.leftMargin = dynamicSide
+                        it.rightMargin = dynamicSide
+                        hotSeats.layoutParams = it
+                    }
                 }
-            }
-            val dynamicVerticalPadding = maxOf(0, 120 - (iconSize / 2))
-            if (hotSeats.paddingTop != dynamicVerticalPadding || hotSeats.paddingBottom != dynamicVerticalPadding) {
-                hotSeats.setPadding(
-                    hotSeats.paddingLeft,
-                    dynamicVerticalPadding,
-                    hotSeats.paddingRight,
-                    dynamicVerticalPadding
-                )
-            }
-
-            return@intercept null
-        }
-
-        val applyPillStyle: Consumer<View?> = Consumer { view ->
-            if (view == null) return@Consumer
-            val pill = GradientDrawable()
-            pill.setShape(GradientDrawable.RECTANGLE)
-            changeDockBackground(pill)
-            pill.setCornerRadius(dockCornerRadius.toFloat())
-            view.background = pill
-            view.setClipToOutline(true)
-        }
-
-        val onFinishInflate: Method =
-            XposedHelpers.findMethodExact(hotSeatsScreenClass, "onFinishInflate")
-        hook(onFinishInflate).intercept { chain: XposedInterface.Chain? ->
-            chain!!.proceed()
-            applyPillStyle.accept(chain.thisObject as View?)
-        }
-
-        val onWallpaperColorChanged =
-            XposedHelpers.findMethodExact(hotSeatsScreenClass, "onWallpaperColorChanged")
-        hook(onWallpaperColorChanged).intercept { chain ->
-            chain.proceed()
-            val isRestart = getLocalStatePrefs()?.getBoolean("isRestart", false) == true
-            if (!isFirstLaunch && !isRestart) {
-                applyPillStyle.accept(chain.thisObject as View?)
-            }
-            isFirstLaunch = false
-            getLocalStatePrefs()?.edit {
-                putBoolean("isRestart", false)
+                val dynamicVerticalPadding = maxOf(0, 120 - (iconSize / 2))
+                if (hotSeats.paddingTop != dynamicVerticalPadding || hotSeats.paddingBottom != dynamicVerticalPadding) {
+                    hotSeats.setPadding(
+                        hotSeats.paddingLeft,
+                        dynamicVerticalPadding,
+                        hotSeats.paddingRight,
+                        dynamicVerticalPadding
+                    )
+                }
+                result
             }
         }
+
+        val screenClass = try {
+            findClassAny(
+                classLoader,
+                "com.miui.home.launcher.hotseats.HotSeatsScreenViewContent",
+                "com.miui.home.launcher.HotSeatsScreenViewContent"
+            )
+        } catch (t: Throwable) {
+            log(Log.WARN, TAG, "Dock background unavailable on $launcherPackage: $t")
+            return
+        }
+
+        safeHook("dockInflate") {
+            hook(XposedHelpers.findMethodExact(screenClass, "onFinishInflate")).intercept { chain ->
+                val result = chain.proceed()
+                applyPillStyle(chain.thisObject as? View)
+                result
+            }
+        }
+        safeHook("dockWallpaperColor") {
+            hook(XposedHelpers.findMethodExact(screenClass, "onWallpaperColorChanged")).intercept { chain ->
+                val result = chain.proceed()
+                if (dockColorCallbackSeen) {
+                    applyPillStyle(chain.thisObject as? View)
+                }
+                dockColorCallbackSeen = true
+                result
+            }
+        }
+    }
+
+    private fun applyPillStyle(view: View?) {
+        if (view == null) return
+        val ctx = launcherContext ?: view.context
+        val pill = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dockCornerRadius.toFloat()
+        }
+        changeDockBackground(ctx, pill)
+        view.background = pill
+        view.clipToOutline = true
     }
 
     private fun refreshGadgets(baseLauncher: Any) {
         try {
             val gadgets = XposedHelpers.getObjectField(baseLauncher, "mGadgets") as? ArrayList<*>
-            if (gadgets?.isNotEmpty()!!) {
-                gadgets.forEach { gadget ->
-                    gadget ?: return@forEach
-                    val gadgetInfo = XposedHelpers.callMethod(gadget, "getTag")
-                    gadgetInfo?.let {
-                        val gadgetId = XposedHelpers.getObjectField(it, "mGadgetId") as? Int
-                        gadgetId?.let { id ->
-                            try {
-                                XposedHelpers.callMethod(
-                                    baseLauncher,
-                                    "reloadGadget",
-                                    arrayOf(Int::class.java),
-                                    id
-                                )
-                            } catch (e: Exception) {
-                                Log.e(TAG, "refreshGadgets: ", e)
-                            }
-                        }
-                    }
+            gadgets?.forEach { gadget ->
+                gadget ?: return@forEach
+                val gadgetInfo = XposedHelpers.callMethod(gadget, "getTag") ?: return@forEach
+                val id = XposedHelpers.getObjectField(gadgetInfo, "mGadgetId") as? Int
+                    ?: return@forEach
+                try {
+                    XposedHelpers.callMethod(
+                        baseLauncher,
+                        "reloadGadget",
+                        arrayOf(Int::class.java),
+                        id
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "refreshGadgets: ", e)
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             log(Log.ERROR, TAG, "Error refreshing gadgets: ${e.message}")
         }
     }
@@ -325,166 +352,139 @@ class MainHook : XposedModule() {
                     baseLauncher.javaClass.classLoader
                 )
                 XposedHelpers.callStaticMethod(mamlUtilsClass, "clearMamlCache")
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 Log.e(TAG, "Could not clear MAML cache", e)
             }
             val mMaMlViews =
                 XposedHelpers.getObjectField(baseLauncher, "mMaMlViews") as? ArrayList<*>
-            if (mMaMlViews?.isNotEmpty()!!) {
-                mMaMlViews.forEach { widget ->
-                    if (widget != null) {
-                        try {
-                            XposedHelpers.setBooleanField(widget, "mThemeApplied", false)
-                            XposedHelpers.callMethod(
-                                widget,
-                                "onUpgrade",
-                                arrayOf(
-                                    Int::class.java,
-                                    Int::class.java
-                                ),
-                                0, 0
-                            )
-                        } catch (innerE: Exception) {
-                            Log.e(TAG, "Failed to force rebuild MAML widget", innerE)
-                        }
+            mMaMlViews?.forEach { widget ->
+                if (widget != null) {
+                    try {
+                        XposedHelpers.setBooleanField(widget, "mThemeApplied", false)
+                        XposedHelpers.callMethod(
+                            widget,
+                            "onUpgrade",
+                            arrayOf(Int::class.java, Int::class.java),
+                            0, 0
+                        )
+                    } catch (innerE: Exception) {
+                        Log.e(TAG, "Failed to force rebuild MAML widget", innerE)
                     }
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e(TAG, "Error fetching mMaMlViews: ${e.message}")
         }
     }
 
-    fun changeDockBackground(drawable: GradientDrawable) {
-        val currentNightMode =
-            launcherContext!!.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-        val isDarkModeEnabled = currentNightMode == Configuration.UI_MODE_NIGHT_YES
+    private fun changeDockBackground(ctx: Context, drawable: GradientDrawable) {
+        val isDarkModeEnabled =
+            (ctx.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
         if (!isThemeDockFolderEnabled) {
-            if (isDarkModeEnabled) {
-                drawable.setColor("#40000000".toColorInt())
-            } else {
-                drawable.setColor("#80FFFFFF".toColorInt())
-            }
+            drawable.setColor((if (isDarkModeEnabled) "#40000000" else "#80FFFFFF").toColorInt())
         } else {
             drawable.setColor(
-                if (dockFolderBgColor != 0) {
-                    ContextCompat.getColor(launcherContext!!, dockFolderBgColor)
-                } else {
-                    ContextCompat.getColor(
-                        launcherContext!!,
-                        Resources.color.system_accent1_600
-                    )
-                }
-
+                ContextCompat.getColor(
+                    ctx,
+                    if (dockFolderBgColor != 0) dockFolderBgColor else Resources.color.system_accent1_600
+                )
             )
             drawable.alpha = dockFolderOpacity
         }
     }
 
     private fun iconSizeHook(classLoader: ClassLoader) {
-        val iconConfigClass = XposedHelpers.findClass(
+        val iconConfigClass = findClassAny(
+            classLoader,
             $$"com.miui.home.common.gridconfig.GridConfig$IconConfig",
-            classLoader
+            $$"com.miui.home.launcher.gridconfig.GridConfig$IconConfig"
         )
         val getIconSizeMethod = XposedHelpers.findMethodExact(iconConfigClass, "getIconSize")
-        hook(getIconSizeMethod).intercept { _ ->
-            return@intercept iconSize
-        }
+        hook(getIconSizeMethod).intercept { _ -> iconSize }
     }
 
-    private fun getLocalStatePrefs(): SharedPreferences? {
-        return launcherContext?.getSharedPreferences(
-            "ukm_module_internal_state",
-            Context.MODE_PRIVATE
+    /**
+     * Hooks the framework entry point instead of the launcher's own Application subclass, whose
+     * name differs between the HyperOS launcher and the POCO launcher.
+     */
+    private fun setLauncherContext() {
+        val method = Instrumentation::class.java.getDeclaredMethod(
+            "callApplicationOnCreate",
+            Application::class.java
         )
-    }
-
-    private fun setLauncherContext(classLoader: ClassLoader) {
-        val appClass = XposedHelpers.findClass("com.miui.home.launcher.Application", classLoader)
-        val onCreateMethodApp = XposedHelpers.findMethodExact(appClass, "onCreate")
-
-        hook(onCreateMethodApp).intercept { chain ->
-            chain.proceed()
-            if (launcherContext == null) {
+        hook(method).intercept { chain ->
+            val result = chain.proceed()
+            val app = chain.args[0] as? Application
+            if (launcherContext == null && app != null && app.packageName == launcherPackage) {
                 try {
-                    launcherContext = chain.thisObject as? Context
-                    if (launcherContext != null) {
-                        val receiver = object : BroadcastReceiver() {
-                            override fun onReceive(ctx: Context, intent: Intent) {
-                                if (intent.action == "com.ukm.app.RELOAD_ICONS") {
-                                    Log.i(TAG, "Reload Broadcast Received! Restarting Launcher...")
-                                    getLocalStatePrefs()?.edit {
-                                        putBoolean("isRestart", true)
-                                    }
-                                    Process.killProcess(Process.myPid())
-                                }
+                    launcherContext = app
+                    val receiver = object : BroadcastReceiver() {
+                        override fun onReceive(ctx: Context, intent: Intent) {
+                            if (intent.action == ACTION_RELOAD) {
+                                Log.i(TAG, "Reload broadcast received, restarting $launcherPackage")
+                                Process.killProcess(Process.myPid())
                             }
                         }
-                        val filter = IntentFilter("com.ukm.app.RELOAD_ICONS")
-                        launcherContext!!.registerReceiver(
-                            receiver,
-                            filter,
-                            Context.RECEIVER_EXPORTED
-                        )
                     }
+                    app.registerReceiver(
+                        receiver,
+                        IntentFilter(ACTION_RELOAD),
+                        Context.RECEIVER_EXPORTED
+                    )
                 } catch (e: Exception) {
                     Log.e(TAG, "Error:", e)
                 }
             }
-            return@intercept null
+            result
         }
     }
 
     private fun iconPackHook(classLoader: ClassLoader) {
         val drawableInfoClass =
             XposedHelpers.findClass("com.miui.home.model.core.DrawableInfo", classLoader)
-        val itemInfoWithIconAndMessageClass = XposedHelpers.findClass(
+        val itemInfoClass = XposedHelpers.findClassIfExists(
             "com.miui.home.model.api.ItemInfoWithIconAndMessage",
             classLoader
         )
-        val applyTo =
-            XposedHelpers.findMethodExact(
-                drawableInfoClass,
-                "applyTo",
-                itemInfoWithIconAndMessageClass
-            )
+        val applyTo = if (itemInfoClass != null) {
+            findMethodLoose(drawableInfoClass, "applyTo", itemInfoClass)
+        } else {
+            findMethodLoose(drawableInfoClass, "applyTo", Any::class.java)
+        }
 
         hook(applyTo).intercept { chain ->
             try {
-                val itemInfoWithIconAndMessage = chain.args[0]
-                val iconType =
-                    XposedHelpers.callMethod(itemInfoWithIconAndMessage, "getIconType") as? Int
-                val isHomeScreenItem = itemInfoWithIconAndMessage.javaClass.name == "com.miui.home.launcher.ShortcutInfo"
+                val itemInfo = chain.args[0] ?: return@intercept chain.proceed()
+                val iconType = XposedHelpers.callMethod(itemInfo, "getIconType") as? Int
+                val isHomeScreenItem = itemInfo.javaClass.name == "com.miui.home.launcher.ShortcutInfo"
                 val shouldThemeIcon = !themeHomeScreenOnly || isHomeScreenItem
-                if (shouldThemeIcon && iconType != 8) {
-                    val originalIcon =
-                        XposedHelpers.getObjectField(chain.thisObject, "icon") as Drawable
-                    val componentName =
-                        XposedHelpers.callMethod(chain.args[0], "getComponentInfo") as ComponentName
-                    val customIcon = getCustomIcon(componentName, originalIcon)
-                    val iconMask = XposedHelpers.getObjectField(chain.thisObject, "enableIconMask")
-                    try {
-                        val setIconDrawable =
-                            XposedHelpers.findMethodExact(
-                                itemInfoWithIconAndMessage::class.java, "setIconDrawable",
-                                Drawable::class.java
-                            )
-                        val setEnableIconMask = XposedHelpers.findMethodExact(
-                            itemInfoWithIconAndMessage::class.java, "setEnableIconMask",
-                            Int::class.java
-                        )
-                        setIconDrawable.invoke(itemInfoWithIconAndMessage, customIcon)
-                        setEnableIconMask.invoke(itemInfoWithIconAndMessage, iconMask)
-                    } catch (_: Exception) {
-                        return@intercept chain.proceed()
-                    }
-                    return@intercept null
+                if (!shouldThemeIcon || iconType == 8) return@intercept chain.proceed()
+
+                val originalIcon =
+                    XposedHelpers.getObjectField(chain.thisObject, "icon") as? Drawable
+                        ?: return@intercept chain.proceed()
+                val componentName =
+                    XposedHelpers.callMethod(itemInfo, "getComponentInfo") as? ComponentName
+                        ?: return@intercept chain.proceed()
+                val customIcon = getCustomIcon(componentName, originalIcon)
+                val iconMask = XposedHelpers.getObjectField(chain.thisObject, "enableIconMask")
+                try {
+                    val setIconDrawable = XposedHelpers.findMethodExact(
+                        itemInfo.javaClass, "setIconDrawable", Drawable::class.java
+                    )
+                    val setEnableIconMask = findMethodLoose(
+                        itemInfo.javaClass, "setEnableIconMask", Int::class.java
+                    )
+                    setIconDrawable.invoke(itemInfo, customIcon)
+                    setEnableIconMask.invoke(itemInfo, iconMask)
+                } catch (_: Exception) {
+                    return@intercept chain.proceed()
                 }
-                return@intercept chain.proceed()
+                null
             } catch (e: Exception) {
-                Log.e(TAG, "hookLauncher: ", e)
-                return@intercept chain.proceed()
+                Log.e(TAG, "iconPackHook: ", e)
+                chain.proceed()
             }
         }
     }
@@ -493,70 +493,45 @@ class MainHook : XposedModule() {
         componentName: ComponentName,
         originalIcon: Drawable
     ): Drawable {
-        if (launcherContext != null) {
-            val exactComponentString =
-                "ComponentInfo{${componentName.packageName}/${componentName.className}}"
-            val manualOverrideKey = "custom_icon_${iconPackPackageName}_$exactComponentString"
-            val manualDrawableName = prefManager?.getString(manualOverrideKey, null)
+        val ctx = launcherContext ?: return originalIcon
+        val exactComponentString =
+            "ComponentInfo{${componentName.packageName}/${componentName.className}}"
+        val manualOverrideKey = "custom_icon_${iconPackPackageName}_$exactComponentString"
+        val manualDrawableName = prefManager?.getString(manualOverrideKey, null)
 
-            if (!manualDrawableName.isNullOrEmpty()) {
-                val manualCustomDrawable = IconPackHelper.loadIcon(
-                    launcherContext!!,
-                    iconPackPackageName,
-                    manualDrawableName
-                )
-                if (manualCustomDrawable != null) {
-                    manualCustomDrawable.bounds = originalIcon.bounds
-                    return getCustomColoredDrawableIcon(manualCustomDrawable)
-                }
-            }
-
-            val appFilterMap =
-                IconPackHelper.getAppFilterMap(launcherContext!!, iconPackPackageName)
-            if (appFilterMap.isEmpty()) return originalIcon
-
-            val drawableName = getBestMatchDrawable(componentName, appFilterMap)
-            if (drawableName != null) {
-                val customDrawable =
-                    IconPackHelper.loadIcon(launcherContext!!, iconPackPackageName, drawableName)
-                if (customDrawable != null) {
-                    customDrawable.bounds = originalIcon.bounds
-                    return getCustomColoredDrawableIcon(customDrawable)
-                }
+        if (!manualDrawableName.isNullOrEmpty()) {
+            val manualCustomDrawable =
+                IconPackHelper.loadIcon(ctx, iconPackPackageName, manualDrawableName)
+            if (manualCustomDrawable != null) {
+                manualCustomDrawable.bounds = originalIcon.bounds
+                return getCustomColoredDrawableIcon(manualCustomDrawable)
             }
         }
-        return originalIcon
+
+        val appFilterMap = IconPackHelper.getAppFilterMap(ctx, iconPackPackageName)
+        if (appFilterMap.isEmpty()) return originalIcon
+
+        val drawableName = getBestMatchDrawable(componentName, appFilterMap) ?: return originalIcon
+        val customDrawable = IconPackHelper.loadIcon(ctx, iconPackPackageName, drawableName)
+            ?: return originalIcon
+        customDrawable.bounds = originalIcon.bounds
+        return getCustomColoredDrawableIcon(customDrawable)
     }
 
     private fun getCustomColoredDrawableIcon(icon: Drawable): Drawable {
         val isMonetEnabled = prefManager?.getBoolean("enable_monet_colors", false) ?: false
-        try {
-            if (isMonetEnabled && launcherContext != null) {
-                val savedBgResId = prefManager?.getInt("monet_bg_color", 0) ?: 0
-                val savedFgResId = prefManager?.getInt("monet_fg_color", 0) ?: 0
-
-                var monetBackground: Int? = null
-                var monetForeground: Int? = null
-
-                if (savedBgResId != 0) monetBackground =
-                    ContextCompat.getColor(launcherContext!!, savedBgResId)
-                if (savedFgResId != 0) {
-                    monetForeground = ContextCompat.getColor(launcherContext!!, savedFgResId)
-                }
-
-                val bakedIcon = IconPackHelper.putColorIntoDrawable(
-                    launcherContext!!,
-                    icon,
-                    monetBackground,
-                    monetForeground
-                ) ?: icon
-                return bakedIcon
-            }
+        val ctx = launcherContext
+        if (!isMonetEnabled || ctx == null) return icon
+        return try {
+            val savedBgResId = prefManager?.getInt("monet_bg_color", 0) ?: 0
+            val savedFgResId = prefManager?.getInt("monet_fg_color", 0) ?: 0
+            val monetBackground = if (savedBgResId != 0) ContextCompat.getColor(ctx, savedBgResId) else null
+            val monetForeground = if (savedFgResId != 0) ContextCompat.getColor(ctx, savedFgResId) else null
+            IconPackHelper.putColorIntoDrawable(ctx, icon, monetBackground, monetForeground) ?: icon
         } catch (e: Exception) {
             Log.e(TAG, "Failed to theme custom icon", e)
-            return icon
+            icon
         }
-        return icon
     }
 
     private fun getBestMatchDrawable(
@@ -565,20 +540,12 @@ class MainHook : XposedModule() {
     ): String? {
         val exactString = "ComponentInfo{${component.packageName}/${component.className}}"
 
-        val cachedMatch = resolvedCache[exactString]
-        if (cachedMatch != null) {
-            return cachedMatch.ifEmpty { null }
-        }
+        resolvedCache[exactString]?.let { return it.ifEmpty { null } }
 
         var match = appFilterMap[exactString]
         if (match == null) {
             val packagePrefix = "ComponentInfo{${component.packageName}/"
-            for ((key, value) in appFilterMap) {
-                if (key.startsWith(packagePrefix)) {
-                    match = value
-                    break
-                }
-            }
+            match = appFilterMap.entries.firstOrNull { it.key.startsWith(packagePrefix) }?.value
         }
         resolvedCache[exactString] = match ?: ""
         return match

@@ -4,8 +4,10 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
@@ -13,20 +15,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.toColorInt
+import androidx.core.view.children
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.slider.Slider
 import com.ukm.app.iconscustomizer.MainActivity.Companion.PREF_NAME
 import io.github.libxposed.service.XposedService
+import com.google.android.material.R as MaterialR
 
 class SettingsFragment : Fragment(), App.ServiceStateListener {
 
@@ -36,22 +39,15 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
     data class IconPackInfo(val name: String, val packageName: String)
 
     private var installedIconPacks = listOf<IconPackInfo>()
-    lateinit var switchEnableTheming: MaterialSwitch
-    lateinit var switchHomescreenOnly: MaterialSwitch
-    lateinit var rowIconPack: LinearLayout
-    lateinit var rowApplyCustom: LinearLayout
-    lateinit var sliderIconSize: Slider
-
-    lateinit var sliderDockCornerRadius: Slider
-    lateinit var switchMonet: MaterialSwitch
-    lateinit var rowMonetFg: LinearLayout
-    lateinit var rowMonetBg: LinearLayout
-    lateinit var switchEnableDock: MaterialSwitch
-    lateinit var switchEnableMonetDockFolder: MaterialSwitch
-    lateinit var rowDockBg: LinearLayout
-    lateinit var sliderDockOpacity: Slider
-    lateinit var switchMonetClock: MaterialSwitch
-    lateinit var rowClockColor: LinearLayout
+    private lateinit var switchEnableTheming: MaterialSwitch
+    private lateinit var switchHomescreenOnly: MaterialSwitch
+    private lateinit var switchMonet: MaterialSwitch
+    private lateinit var switchEnableDock: MaterialSwitch
+    private lateinit var switchEnableMonetDockFolder: MaterialSwitch
+    private lateinit var switchMonetClock: MaterialSwitch
+    private lateinit var sliderIconSize: Slider
+    private lateinit var sliderDockCornerRadius: Slider
+    private lateinit var sliderDockOpacity: Slider
 
     private val colorPickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -59,17 +55,12 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
         if (result.resultCode == Activity.RESULT_OK) {
             val colorId = result.data?.getIntExtra("RETURNED_COLOR_ID", 0) ?: 0
             val targetKey = result.data?.getStringExtra("RETURNED_TARGET_KEY")
-
             view?.let { v ->
                 when (targetKey) {
                     "monet_fg_color" -> updateColorPreview(v, R.id.img_preview_fg, colorId)
                     "monet_bg_color" -> updateColorPreview(v, R.id.img_preview_bg, colorId)
-                    "monet_folder_dock_bg_color" -> updateColorPreview(
-                        v,
-                        R.id.img_preview_dock_bg,
-                        colorId
-                    )
-
+                    "monet_folder_dock_bg_color" ->
+                        updateColorPreview(v, R.id.img_preview_dock_bg, colorId)
                     "monet_clock_color" -> updateColorPreview(v, R.id.img_preview_clock, colorId)
                 }
             }
@@ -80,16 +71,14 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_settings, container, false)
-    }
+    ): View? = inflater.inflate(R.layout.fragment_settings, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.materialToolbar)
-        toolbar.title = "Home"
+        (activity as? MainActivity)?.setScreenTitle(getString(R.string.app_name))
         installedIconPacks = getInstalledIconPacks(requireContext())
         setupInteractions(view)
+        loadSystemInfo(view)
     }
 
     override fun onStart() {
@@ -105,47 +94,88 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
     override fun onServiceStateChanged(service: XposedService?) {
         Log.i(MainHook.TAG, "Service State Changed")
         this.mService = service
-        requireActivity().runOnUiThread {
-            applyServiceStateToUI(view)
+        activity?.runOnUiThread { applyServiceStateToUI(view) }
+    }
+
+    /** Whole row toggles the switch; the switch itself is not clickable. */
+    private fun bindSwitchRow(
+        view: View,
+        rowId: Int,
+        switch: MaterialSwitch,
+        prefKey: String,
+        refreshUi: Boolean
+    ) {
+        view.findViewById<View>(rowId).setOnClickListener { switch.toggle() }
+        switch.setOnCheckedChangeListener { _, isChecked ->
+            if (isUpdatingUI || mService == null) return@setOnCheckedChangeListener
+            UIHelpers.pushRemotePref(prefKey, isChecked)
+            if (refreshUi) applyServiceStateToUI(view)
+            UIHelpers.restartLauncher(requireContext())
+        }
+    }
+
+    private fun bindSlider(view: View, slider: Slider, valueViewId: Int, prefKey: String) {
+        val valueView = view.findViewById<TextView>(valueViewId)
+        slider.setLabelFormatter { it.toInt().toString() }
+        slider.addOnChangeListener { _, value, fromUser ->
+            valueView.text = value.toInt().toString()
+            if (fromUser && mService != null) {
+                UIHelpers.pushRemotePref(prefKey, value.toInt())
+            }
+        }
+        slider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) {}
+            override fun onStopTrackingTouch(slider: Slider) {
+                if (mService != null) UIHelpers.restartLauncher(requireContext())
+            }
+        })
+    }
+
+    private fun bindColorRow(view: View, rowId: Int, title: String, targetKey: String, typeKey: String) {
+        view.findViewById<View>(rowId).setOnClickListener {
+            val intent = Intent(requireContext(), ColorPickerActivity::class.java).apply {
+                putExtra("EXTRA_TITLE", title)
+                putExtra("EXTRA_TARGET_KEY", targetKey)
+                putExtra("EXTRA_TYPE_KEY", typeKey)
+            }
+            colorPickerLauncher.launch(intent)
         }
     }
 
     private fun setupInteractions(view: View) {
         switchEnableTheming = view.findViewById(R.id.switch_enable_theming)
         switchHomescreenOnly = view.findViewById(R.id.switch_homescreen_only)
-        rowIconPack = view.findViewById(R.id.row_icon_pack)
-        rowApplyCustom = view.findViewById(R.id.row_apply_custom)
+        switchMonet = view.findViewById(R.id.switch_enable_monet)
+        switchEnableDock = view.findViewById(R.id.switch_enable_dock)
+        switchEnableMonetDockFolder = view.findViewById(R.id.switch_monet_dock_folder)
+        switchMonetClock = view.findViewById(R.id.switch_monet_clock)
         sliderIconSize = view.findViewById(R.id.slider_icon_size)
+        sliderDockOpacity = view.findViewById(R.id.slider_dock_opacity)
+        sliderDockCornerRadius = view.findViewById(R.id.slider_dock_corners)
 
-        switchEnableTheming.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingUI) return@setOnCheckedChangeListener
-            if (mService != null) {
-                UIHelpers.pushRemotePref("enable_themed_icons", isChecked)
-                applyServiceStateToUI(view)
-                UIHelpers.restartLauncher(requireContext())
-            }
-        }
+        bindSwitchRow(view, R.id.row_enable_theming, switchEnableTheming, "enable_themed_icons", true)
+        bindSwitchRow(view, R.id.row_homescreen_only, switchHomescreenOnly, "themed_icons_homescreen_only", false)
+        bindSwitchRow(view, R.id.row_enable_monet, switchMonet, "enable_monet_colors", true)
+        bindSwitchRow(view, R.id.row_enable_dock, switchEnableDock, "enable_dock", true)
+        bindSwitchRow(view, R.id.row_monet_dock_folder, switchEnableMonetDockFolder, "theme_dock_folder", true)
+        bindSwitchRow(view, R.id.row_monet_clock, switchMonetClock, "enable_themed_clock", true)
 
-        switchHomescreenOnly.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingUI) return@setOnCheckedChangeListener
-            if (mService != null) {
-                UIHelpers.pushRemotePref("themed_icons_homescreen_only", isChecked)
-                UIHelpers.restartLauncher(requireContext())
-            }
-        }
+        bindSlider(view, sliderIconSize, R.id.tv_icon_size_value, "icon_size")
+        bindSlider(view, sliderDockOpacity, R.id.tv_dock_opacity_value, "dock_folder_opacity")
+        bindSlider(view, sliderDockCornerRadius, R.id.tv_dock_corners_value, "dock_corner_radius")
 
-        rowIconPack.setOnClickListener {
-            showIconPackPicker(view)
-        }
+        bindColorRow(view, R.id.row_monet_fg, "Pick Foreground Color", "monet_fg_color", "selected_fg_color_name")
+        bindColorRow(view, R.id.row_monet_bg, "Pick Background Color", "monet_bg_color", "selected_bg_color_name")
+        bindColorRow(view, R.id.row_dock_bg, "Pick Dock Background", "monet_folder_dock_bg_color", "selected_monet_folder_dock_bg_color")
+        bindColorRow(view, R.id.row_clock_color, "Pick Clock Color", "monet_clock_color", "selected_monet_clock_color")
 
-        rowApplyCustom.setOnClickListener {
-            val prefs = mService?.getRemotePreferences(PREF_NAME)
-            val selectedPack = prefs?.getString("icon_pack", "none")
+        view.findViewById<View>(R.id.row_icon_pack).setOnClickListener { showIconPackPicker(view) }
+
+        view.findViewById<View>(R.id.row_apply_custom).setOnClickListener {
+            val selectedPack = mService?.getRemotePreferences(PREF_NAME)?.getString("icon_pack", "none")
             if (selectedPack != null && selectedPack != "none") {
                 val fragment = AllAppsFragment().apply {
-                    arguments = Bundle().apply {
-                        putString("EXTRA_ICON_PACK", selectedPack)
-                    }
+                    arguments = Bundle().apply { putString("EXTRA_ICON_PACK", selectedPack) }
                 }
                 requireActivity().supportFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, fragment)
@@ -154,152 +184,107 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
             }
         }
 
-        sliderIconSize.addOnChangeListener { _, value, fromUser ->
-            if (fromUser && mService != null) {
-                UIHelpers.pushRemotePref("icon_size", value.toInt())
-            }
-        }
-        sliderIconSize.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
-            override fun onStartTrackingTouch(slider: Slider) {}
-            override fun onStopTrackingTouch(slider: Slider) {
-                UIHelpers.restartLauncher(requireContext())
-            }
-        })
-
-        switchMonet = view.findViewById(R.id.switch_enable_monet)
-        rowMonetFg = view.findViewById(R.id.row_monet_fg)
-        rowMonetBg = view.findViewById(R.id.row_monet_bg)
-
-        switchMonet.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingUI) return@setOnCheckedChangeListener
-            if (mService != null) {
-                UIHelpers.pushRemotePref("enable_monet_colors", isChecked)
-                applyServiceStateToUI(view)
-                UIHelpers.restartLauncher(requireContext())
-            }
+        view.findViewById<View>(R.id.btn_restart_launcher).setOnClickListener { button ->
+            button.isEnabled = false
+            val appContext = requireContext().applicationContext
+            Thread {
+                val success = UIHelpers.forceRestartLauncher(appContext)
+                activity?.runOnUiThread {
+                    button.isEnabled = true
+                    toast(if (success) R.string.toast_launcher_restarted else R.string.toast_root_denied)
+                }
+            }.start()
         }
 
-        rowMonetFg.setOnClickListener {
-            val intent = Intent(requireContext(), ColorPickerActivity::class.java).apply {
-                putExtra("EXTRA_TITLE", "Pick Foreground Color")
-                putExtra("EXTRA_TARGET_KEY", "monet_fg_color")
-                putExtra("EXTRA_TYPE_KEY", "selected_fg_color_name")
-            }
-            colorPickerLauncher.launch(intent)
+        view.findViewById<View>(R.id.btn_restart_systemui).setOnClickListener { button ->
+            MaterialAlertDialogBuilder(requireContext())
+                .setIcon(R.drawable.ic_refresh)
+                .setTitle(R.string.action_restart_systemui)
+                .setMessage(R.string.action_restart_systemui_summary)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.action_restart) { _, _ ->
+                    button.isEnabled = false
+                    Thread {
+                        val success = UIHelpers.restartSystemUi()
+                        activity?.runOnUiThread {
+                            button.isEnabled = true
+                            toast(if (success) R.string.toast_systemui_restarted else R.string.toast_root_denied)
+                        }
+                    }.start()
+                }
+                .show()
         }
+    }
 
-        rowMonetBg.setOnClickListener {
-            val intent = Intent(requireContext(), ColorPickerActivity::class.java).apply {
-                putExtra("EXTRA_TITLE", "Pick Background Color")
-                putExtra("EXTRA_TARGET_KEY", "monet_bg_color")
-                putExtra("EXTRA_TYPE_KEY", "selected_bg_color_name")
+    private fun toast(resId: Int) {
+        context?.let { Toast.makeText(it, resId, Toast.LENGTH_SHORT).show() }
+    }
+
+    /** getprop / package queries run off the main thread. */
+    private fun loadSystemInfo(view: View) {
+        val appContext = requireContext().applicationContext
+        Thread {
+            val device = UIHelpers.getDeviceName()
+            val osVersion = UIHelpers.getHyperOsVersion()
+            val osMajor = UIHelpers.getHyperOsMajorVersion()
+            val launcher = UIHelpers.getDefaultLauncher(appContext)
+            activity?.runOnUiThread {
+                if (!isAdded) return@runOnUiThread
+                view.findViewById<TextView>(R.id.tv_status_device).text =
+                    getString(R.string.status_device, device)
+                view.findViewById<TextView>(R.id.tv_status_os).text =
+                    getString(R.string.status_os, osVersion ?: "Unknown", Build.VERSION.RELEASE)
+                view.findViewById<TextView>(R.id.tv_status_launcher).text =
+                    getString(
+                        R.string.status_launcher,
+                        launcher?.let { "${it.label} (${it.packageName})" } ?: "Not set"
+                    )
+                val warning = when {
+                    osMajor == null || osMajor < 3 -> getString(R.string.status_os_unsupported)
+                    launcher != null && !launcher.isSupported -> getString(R.string.status_launcher_unsupported)
+                    else -> null
+                }
+                view.findViewById<TextView>(R.id.tv_status_warning).apply {
+                    text = warning
+                    isVisible = warning != null
+                }
             }
-            colorPickerLauncher.launch(intent)
+        }.start()
+    }
+
+    private fun applyStatusCard(view: View, active: Boolean) {
+        val card = view.findViewById<MaterialCardView>(R.id.card_status)
+        val bg = MaterialColors.getColor(
+            card,
+            if (active) MaterialR.attr.colorPrimaryContainer else MaterialR.attr.colorErrorContainer
+        )
+        val fg = MaterialColors.getColor(
+            card,
+            if (active) MaterialR.attr.colorOnPrimaryContainer else MaterialR.attr.colorOnErrorContainer
+        )
+        card.setCardBackgroundColor(bg)
+        view.findViewById<ImageView>(R.id.img_status).apply {
+            setImageResource(if (active) R.drawable.ic_check_circle else R.drawable.ic_error)
+            imageTintList = ColorStateList.valueOf(fg)
         }
-
-        switchEnableDock = view.findViewById(R.id.switch_enable_dock)
-        switchEnableMonetDockFolder = view.findViewById(R.id.switch_monet_dock_folder)
-        rowDockBg = view.findViewById(R.id.row_dock_bg)
-        sliderDockOpacity = view.findViewById(R.id.slider_dock_opacity)
-        sliderDockCornerRadius = view.findViewById(R.id.slider_dock_corners)
-
-        switchEnableDock.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingUI) return@setOnCheckedChangeListener
-            if (mService != null) {
-                UIHelpers.pushRemotePref("enable_dock", isChecked)
-                applyServiceStateToUI(view)
-                UIHelpers.restartLauncher(requireContext())
-            }
-        }
-
-        switchEnableMonetDockFolder.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingUI) return@setOnCheckedChangeListener
-            if (mService != null) {
-                UIHelpers.pushRemotePref("theme_dock_folder", isChecked)
-                applyServiceStateToUI(view)
-                UIHelpers.restartLauncher(requireContext())
-            }
-        }
-
-        rowDockBg.setOnClickListener {
-            val intent = Intent(requireContext(), ColorPickerActivity::class.java).apply {
-                putExtra("EXTRA_TITLE", "Pick Dock Background")
-                putExtra("EXTRA_TARGET_KEY", "monet_folder_dock_bg_color")
-                putExtra("EXTRA_TYPE_KEY", "selected_monet_folder_dock_bg_color")
-            }
-            colorPickerLauncher.launch(intent)
-        }
-
-        sliderDockOpacity.addOnChangeListener { _, value, fromUser ->
-            if (fromUser && mService != null) {
-                UIHelpers.pushRemotePref("dock_folder_opacity", value.toInt())
-            }
-        }
-        sliderDockCornerRadius.addOnChangeListener { _, value, fromUser ->
-            if (fromUser && mService != null) {
-                UIHelpers.pushRemotePref("dock_corner_radius", value.toInt())
-            }
-        }
-        sliderDockOpacity.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
-            override fun onStartTrackingTouch(slider: Slider) {}
-            override fun onStopTrackingTouch(slider: Slider) {
-                UIHelpers.restartLauncher(requireContext())
-            }
-        })
-        sliderDockCornerRadius.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
-            override fun onStartTrackingTouch(slider: Slider) {}
-            override fun onStopTrackingTouch(slider: Slider) {
-                UIHelpers.restartLauncher(requireContext())
-            }
-        })
-
-        switchMonetClock = view.findViewById(R.id.switch_monet_clock)
-        rowClockColor = view.findViewById(R.id.row_clock_color)
-
-        switchMonetClock.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingUI) return@setOnCheckedChangeListener
-            if (mService != null) {
-                UIHelpers.pushRemotePref("enable_themed_clock", isChecked)
-                applyServiceStateToUI(view)
-                UIHelpers.restartLauncher(requireContext())
-            }
-        }
-
-        rowClockColor.setOnClickListener {
-            val intent = Intent(requireContext(), ColorPickerActivity::class.java).apply {
-                putExtra("EXTRA_TITLE", "Pick Clock Color")
-                putExtra("EXTRA_TARGET_KEY", "monet_clock_color")
-                putExtra("EXTRA_TYPE_KEY", "selected_monet_clock_color")
-            }
-            colorPickerLauncher.launch(intent)
-        }
-
-        view.findViewById<MaterialButton>(R.id.btn_restart_launcher).setOnClickListener {
-            if (mService != null) {
-                val success = UIHelpers.restartLauncher(requireContext())
-                Toast.makeText(
-                    context,
-                    if (success) "Launcher Restarted" else "Error Restarting",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
+        view.findViewById<TextView>(R.id.tv_status_title)
+            .setText(if (active) R.string.status_active else R.string.status_inactive)
+        view.findViewById<TextView>(R.id.tv_status_summary).isVisible = !active
+        listOf(
+            R.id.tv_status_title, R.id.tv_status_summary, R.id.tv_status_device,
+            R.id.tv_status_os, R.id.tv_status_launcher, R.id.tv_status_warning
+        ).forEach { view.findViewById<TextView>(it).setTextColor(fg) }
     }
 
     private fun applyServiceStateToUI(view: View?) {
         if (view == null) return
 
-        if (mService == null) {
-            context?.let {
-                Toast.makeText(it, "XposedService Not Started", Toast.LENGTH_SHORT).show()
-            }
-            setUiEnabled(view, false)
-            return
-        }
-        setUiEnabled(view, true)
+        val service = mService
+        applyStatusCard(view, service != null)
+        setUiEnabled(view, service != null)
+        if (service == null) return
 
-        val prefs = mService!!.getRemotePreferences(PREF_NAME)
-
+        val prefs = service.getRemotePreferences(PREF_NAME)
         val isThemingEnabled = prefs.getBoolean("enable_themed_icons", false)
         val isMonetCustomization = prefs.getBoolean("enable_monet_colors", false)
         val isThemeDockFolder = prefs.getBoolean("theme_dock_folder", false)
@@ -307,117 +292,86 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
         val isThemeClockWidget = prefs.getBoolean("enable_themed_clock", false)
         val selectedPackId = prefs.getString("icon_pack", "none") ?: "none"
 
-        val iconSize = prefs.getInt("icon_size", 180).toFloat()
-        val dockOpacity = prefs.getInt("dock_folder_opacity", 200).toFloat()
-        val dockRadius = prefs.getInt("dock_corner_radius", 60).toFloat()
-
         isUpdatingUI = true
-
         switchEnableTheming.isChecked = isThemingEnabled
         switchHomescreenOnly.isChecked = prefs.getBoolean("themed_icons_homescreen_only", false)
         switchMonet.isChecked = isMonetCustomization
-        switchEnableDock.isChecked = prefs.getBoolean("enable_dock", false)
+        switchEnableDock.isChecked = isDockEnabled
         switchEnableMonetDockFolder.isChecked = isThemeDockFolder
         switchMonetClock.isChecked = isThemeClockWidget
-        sliderIconSize.value = iconSize
-        sliderDockOpacity.value = dockOpacity
-        sliderDockCornerRadius.value = dockRadius
+        sliderIconSize.value = prefs.getInt("icon_size", 180).toFloat()
+            .coerceIn(sliderIconSize.valueFrom, sliderIconSize.valueTo)
+        sliderDockOpacity.value = prefs.getInt("dock_folder_opacity", 200).toFloat()
+            .coerceIn(sliderDockOpacity.valueFrom, sliderDockOpacity.valueTo)
+        sliderDockCornerRadius.value = prefs.getInt("dock_corner_radius", 60).toFloat()
+            .coerceIn(sliderDockCornerRadius.valueFrom, sliderDockCornerRadius.valueTo)
         isUpdatingUI = false
 
-        val selectedPackName =
-            if (selectedPackId == "none") "None" else installedIconPacks.find { it.packageName == selectedPackId }?.name
-                ?: "Unknown"
-        view.findViewById<TextView>(R.id.tv_selected_icon_pack).text = selectedPackName
+        view.findViewById<TextView>(R.id.tv_selected_icon_pack).text =
+            if (selectedPackId == "none") "None"
+            else installedIconPacks.find { it.packageName == selectedPackId }?.name ?: "Unknown"
 
         updateColorPreview(view, R.id.img_preview_fg, prefs.getInt("monet_fg_color", 0))
         updateColorPreview(view, R.id.img_preview_bg, prefs.getInt("monet_bg_color", 0))
-        updateColorPreview(
-            view,
-            R.id.img_preview_dock_bg,
-            prefs.getInt("monet_folder_dock_bg_color", 0)
-        )
+        updateColorPreview(view, R.id.img_preview_dock_bg, prefs.getInt("monet_folder_dock_bg_color", 0))
         updateColorPreview(view, R.id.img_preview_clock, prefs.getInt("monet_clock_color", 0))
 
-        val vTheming = if (isThemingEnabled) View.VISIBLE else View.GONE
-        switchHomescreenOnly.visibility = vTheming
-        view.findViewById<View>(R.id.div_homescreen_only).visibility = vTheming
-        view.findViewById<View>(R.id.row_icon_pack).visibility = vTheming
-        view.findViewById<View>(R.id.div_icon_pack).visibility = vTheming
-        view.findViewById<View>(R.id.title_monet_colors).visibility = vTheming
-        view.findViewById<View>(R.id.card_monet_colors).visibility = vTheming
-
-        val vApplyCustom =
-            if (isThemingEnabled && selectedPackId != "none") View.VISIBLE else View.GONE
-        view.findViewById<View>(R.id.row_apply_custom).visibility = vApplyCustom
-        view.findViewById<View>(R.id.div_apply_custom).visibility = vApplyCustom
-
-        val vMonetColors = if (isMonetCustomization) View.VISIBLE else View.GONE
-        view.findViewById<View>(R.id.row_monet_fg).visibility = vMonetColors
-        view.findViewById<View>(R.id.div_monet_colors).visibility = vMonetColors
-        view.findViewById<View>(R.id.row_monet_bg).visibility = vMonetColors
-        view.findViewById<View>(R.id.div_monet_bg).visibility = vMonetColors
-
-        val vDockMonet = if (isThemeDockFolder) View.VISIBLE else View.GONE
-        view.findViewById<View>(R.id.row_dock_bg).visibility = vDockMonet
-        view.findViewById<View>(R.id.div_dock_bg).visibility = vDockMonet
-        view.findViewById<View>(R.id.div_dock_bg).visibility = vDockMonet
-
-        val vDockFolder = if (isThemeDockFolder) View.VISIBLE else View.GONE
-        view.findViewById<View>(R.id.row_dock_opacity).visibility = vDockFolder
-        view.findViewById<View>(R.id.div_dock_folder).visibility = vDockFolder
-
-        val vDockCornerRadius = if (isDockEnabled) View.VISIBLE else View.GONE
-        view.findViewById<View>(R.id.row_dock_corners).visibility = vDockCornerRadius
-
-        val vClock = if (isThemeClockWidget) View.VISIBLE else View.GONE
-        view.findViewById<View>(R.id.row_clock_color).visibility = vClock
-        view.findViewById<View>(R.id.div_clock_color).visibility = vClock
+        fun show(visible: Boolean, vararg ids: Int) = ids.forEach { view.findViewById<View>(it).isVisible = visible }
+        show(
+            isThemingEnabled,
+            R.id.row_homescreen_only, R.id.row_icon_pack, R.id.title_monet_colors, R.id.card_monet_colors
+        )
+        show(isThemingEnabled && selectedPackId != "none", R.id.row_apply_custom)
+        show(isMonetCustomization, R.id.row_monet_fg, R.id.row_monet_bg)
+        show(isDockEnabled, R.id.row_dock_corners)
+        show(isThemeDockFolder, R.id.row_dock_opacity, R.id.row_dock_bg)
+        show(isThemeClockWidget, R.id.row_clock_color)
     }
 
     private fun showIconPackPicker(view: View) {
         val displayNames = arrayOf("None") + installedIconPacks.map { it.name }.toTypedArray()
-        val packageNames =
-            arrayOf("none") + installedIconPacks.map { it.packageName }.toTypedArray()
+        val packageNames = arrayOf("none") + installedIconPacks.map { it.packageName }.toTypedArray()
 
-        val prefs = mService?.getRemotePreferences(PREF_NAME)
-        val currentSelection = prefs?.getString("icon_pack", "none")
+        val currentSelection = mService?.getRemotePreferences(PREF_NAME)?.getString("icon_pack", "none")
         val currentIndex = packageNames.indexOf(currentSelection).takeIf { it >= 0 } ?: 0
 
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Choose Icon Pack")
+            .setIcon(R.drawable.ic_apps)
+            .setTitle(R.string.pref_choose_pack)
             .setSingleChoiceItems(displayNames, currentIndex) { dialog, which ->
-                val selectedPkg = packageNames[which]
-                UIHelpers.pushRemotePref("icon_pack", selectedPkg)
+                UIHelpers.pushRemotePref("icon_pack", packageNames[which])
                 applyServiceStateToUI(view)
                 UIHelpers.restartLauncher(requireContext())
                 dialog.dismiss()
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
     private fun updateColorPreview(view: View, imageViewId: Int, savedColor: Int) {
         val imageView = view.findViewById<ImageView>(imageViewId) ?: return
         val resolvedColor = try {
-            if (savedColor != 0) ContextCompat.getColor(
-                requireContext(),
-                savedColor
-            ) else Color.TRANSPARENT
+            if (savedColor != 0) ContextCompat.getColor(requireContext(), savedColor) else Color.TRANSPARENT
         } catch (_: Exception) {
             Color.TRANSPARENT
         }
-        val colorIcon = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = dpToPx(12f)
+        val outline = MaterialColors.getColor(imageView, MaterialR.attr.colorOutline)
+        imageView.setImageDrawable(GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
             setColor(resolvedColor)
-            setStroke(dpToPx(1f).toInt(), "#33000000".toColorInt())
-        }
-        imageView.setImageDrawable(colorIcon)
+            setStroke(dpToPx(1.5f).toInt(), outline)
+        })
     }
 
     private fun setUiEnabled(view: View, isEnabled: Boolean) {
-        switchEnableTheming.parent?.requestLayout()
-        view.isEnabled = isEnabled
+        val content = view.findViewById<ViewGroup>(R.id.settings_content)
+        content.alpha = if (isEnabled) 1f else 0.38f
+        setEnabledRecursive(content, isEnabled)
+    }
+
+    private fun setEnabledRecursive(view: View, enabled: Boolean) {
+        view.isEnabled = enabled
+        if (view is ViewGroup) view.children.forEach { setEnabledRecursive(it, enabled) }
     }
 
     private fun dpToPx(dp: Float): Float =
@@ -428,13 +382,11 @@ class SettingsFragment : Fragment(), App.ServiceStateListener {
         val iconPacks = mutableListOf<IconPackInfo>()
         val actions = arrayOf("com.novalauncher.THEME", "org.adw.launcher.THEMES")
         for (action in actions) {
-            val intent = Intent(action)
-            val resolveInfos = pm.queryIntentActivities(intent, PackageManager.GET_META_DATA)
+            val resolveInfos = pm.queryIntentActivities(Intent(action), PackageManager.GET_META_DATA)
             for (info in resolveInfos) {
                 val packageName = info.activityInfo.packageName
-                val label = info.loadLabel(pm).toString()
                 if (iconPacks.none { it.packageName == packageName }) {
-                    iconPacks.add(IconPackInfo(label, packageName))
+                    iconPacks.add(IconPackInfo(info.loadLabel(pm).toString(), packageName))
                 }
             }
         }

@@ -1,4 +1,11 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <style name="Theme.IconsCustomizer" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#A8C8FF</item>
+        <item name="colorSecondaryContainer">#3E4759</item>
+        <item name="colorOnSecondaryContainer">#DAE2F9</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.IconsCustomizer.Large</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.IconsCustomizer.ExtraLarge</item>
+        <item name="materialSwitchStyle">@style/Widget.Material3.CompoundButton.MaterialSwitch</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
     </style>
 </resources>

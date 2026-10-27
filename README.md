@@ -36,7 +36,7 @@ An advanced Xposed/LSPosed module designed to bring ultimate icon customization 
 Before installing, ensure your device meets the following requirements:
 1. **Root Access:** Magisk or KernelSU installed.
 2. **Xposed Framework:** LSPosed (Zygisk or Riru version) installed and active.
-3. **OS:** HyperOS (Tested on Poco F7 HyperOS 3.0 And 3.1 China Latest Launcher).
+3. **OS:** HyperOS 3.0 or newer (Android 15+) on Xiaomi, Redmi and POCO devices. Supports both the HyperOS System Launcher (`com.miui.home`) and the POCO Launcher (`com.mi.android.globallauncher`). Originally tested on Poco F7 (HyperOS 3.0/3.1 China launcher).
 4. Apply Default Icons From HyperOS Themes App For Best Results.
 
 ## 🚀 Installation
@@ -45,7 +45,7 @@ Before installing, ensure your device meets the following requirements:
 2. Install the APK on your device.
 3. Open the **LSPosed Manager** app.
 4. Go to the **Modules** tab and enable **IconsCustomizer**.
-5. Ensure the **System Launcher** (HyperOS Launcher) is checked in the scope list.
+5. Ensure your launcher is checked in the scope list: **System Launcher** (`com.miui.home`) and/or **POCO Launcher** (`com.mi.android.globallauncher`). The app's status card shows which launcher your device uses.
 6. **Force Stop Launcher App Or Reboot your device** to apply the hooks.
 
 ## 🛠️ How to Use
@@ -54,7 +54,8 @@ Before installing, ensure your device meets the following requirements:
 2. Enable the **Allow Custom Icon Packs** option.
 3. Select your desired installed icon pack from the list.
 4. If some apps have missing icons in the icon pack, use the **"Apply Custom Icon to Specific Apps"** option and choose an identical icon from the icon pack for that app.
-5. Tap the **"Restart Launcher"** button to apply changes immediately if they are not automatically applied.
+5. Tap the **"Restart launcher"** button to apply changes immediately if they are not automatically applied (uses root when available).
+6. **"Restart System UI"** (root) restarts the status bar, notifications and navigation without rebooting the phone.
 
 > **🎨 Note on Monet Theming:**
 > If you are using icon packs with Monet theming colors, you will need to use the **ColorBlendr** app to manage your Monet color palette control. You must click the **Restart Launcher** button every time you change your wallpaper or make changes to your Monet color palette to apply those new colors to your icons.

@@ -5,6 +5,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.appbar.MaterialToolbar
 
 class MainActivity : AppCompatActivity() {
@@ -13,22 +15,33 @@ class MainActivity : AppCompatActivity() {
         const val PREF_NAME = "com.ukm.app.iconscustomizer_preferences"
     }
 
+    private lateinit var collapsingToolbar: CollapsingToolbarLayout
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+        collapsingToolbar = findViewById(R.id.collapsingToolbar)
+        setSupportActionBar(findViewById<MaterialToolbar>(R.id.materialToolbar))
+
+        // The AppBarLayout consumes the top inset itself (fitsSystemWindows).
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.fragment_container)) { v, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            v.updatePadding(left = bars.left, right = bars.right, bottom = bars.bottom)
             insets
         }
+
         if (savedInstanceState == null) {
             supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.fragment_container, SettingsFragment())
                 .commit()
         }
-        val materialToolbar: MaterialToolbar = findViewById(R.id.materialToolbar)
-        setSupportActionBar(materialToolbar)
+    }
+
+    fun setScreenTitle(title: CharSequence) {
+        collapsingToolbar.title = title
     }
 }

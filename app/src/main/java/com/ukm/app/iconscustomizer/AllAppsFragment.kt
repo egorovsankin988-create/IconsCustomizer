@@ -27,7 +27,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.appbar.MaterialToolbar
 import com.ukm.app.iconscustomizer.MainActivity.Companion.PREF_NAME
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,8 +56,7 @@ class AllAppsFragment : Fragment(R.layout.fragment_all_apps) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.materialToolbar)
-        toolbar.title = "Apply Custom Icon"
+        (activity as? MainActivity)?.setScreenTitle(getString(R.string.pref_apply_custom))
         val searchEditText =
             view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchAppEditText)
         val recyclerView = view.findViewById<RecyclerView>(R.id.appRecyclerView)
