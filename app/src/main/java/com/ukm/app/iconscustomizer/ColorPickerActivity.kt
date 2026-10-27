@@ -501,7 +501,6 @@ class ColorPickerActivity : AppCompatActivity() {
             UIHelpers.pushLocalPref(this, targetPreferenceKey, 0)
             UIHelpers.pushRemotePref(colorTypeKey, "default")
             UIHelpers.pushLocalPref(this, colorTypeKey, "default")
-            UIHelpers.restartLauncher(this)
             Toast.makeText(this, "Цвет сброшен по умолчанию", Toast.LENGTH_SHORT).show()
             finishWithResult(0)
         }
@@ -516,7 +515,6 @@ class ColorPickerActivity : AppCompatActivity() {
             UIHelpers.pushRemotePref(targetPreferenceKey, toSaveValue)
             UIHelpers.pushRemotePref(colorTypeKey, toSaveName)
 
-            UIHelpers.restartLauncher(this)
             Toast.makeText(this, getString(R.string.toast_launcher_restarted), Toast.LENGTH_SHORT).show()
             finishWithResult(toSaveValue)
         }

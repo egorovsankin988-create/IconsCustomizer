@@ -11,6 +11,9 @@ import java.util.concurrent.CopyOnWriteArraySet
 class App : Application(), XposedServiceHelper.OnServiceListener {
 
     companion object {
+        lateinit var instance: App
+            private set
+
         var mService: XposedService? = null
             private set
 
@@ -48,6 +51,7 @@ class App : Application(), XposedServiceHelper.OnServiceListener {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         DynamicColors.applyToActivitiesIfAvailable(this)
         XposedServiceHelper.registerListener(this)
     }

@@ -93,18 +93,18 @@ object UIHelpers {
         return LauncherInfo(info.packageName, info.applicationInfo.loadLabel(pm).toString())
     }
 
+    /** Writes a setting (LSPosed remote prefs + local mirror). */
     fun pushRemotePref(changedKey: String, newValue: Any): Boolean {
-        val service = App.mService ?: return false
-        val remotePrefs = service.getRemotePreferences(PREF_NAME)
+        com.ukm.app.iconscustomizer.ui.PrefStore.put(changedKey, newValue)
+        return App.mService != null
+    }
 
-        remotePrefs.edit {
-            when (newValue) {
-                is String -> putString(changedKey, newValue.trim())
-                is Boolean -> putBoolean(changedKey, newValue)
-                is Int -> putInt(changedKey, newValue)
-            }
+    /** Applies Settings.Global animation scales (percent values) through root. */
+    fun setAnimationScales(values: List<Pair<String, Int>>): Boolean {
+        val cmd = values.joinToString(" && ") { (name, percent) ->
+            "settings put global $name ${String.format(java.util.Locale.US, "%.2f", percent / 100f)}"
         }
-        return true
+        return runAsRoot(cmd)
     }
 
     fun pushLocalPref(context: Context, changedKey: String, newValue: Any) {

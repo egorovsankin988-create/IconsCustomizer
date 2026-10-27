@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Room for the floating navigation bar and the apply button. -->
+    <dimen name="page_bottom_padding">168dp</dimen>
+    <dimen name="segment_corner_outer">26dp</dimen>
+    <dimen name="segment_corner_inner">6dp</dimen>
+    <dimen name="segment_gap">3dp</dimen>
+</resources>

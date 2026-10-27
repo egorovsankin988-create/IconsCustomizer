@@ -24,6 +24,26 @@ An advanced Xposed/LSPosed module designed to bring ultimate icon customization 
   <img src="imgs/screenshots2.jpg" width="300" alt="IconsCustomizer Module Settings UI" />
 </p>
 
+## ✨ HyperDesk 2.0
+
+HyperDesk is the successor of IconsCustomizer: one LSPosed module for the HyperOS 3+ desktop **and** System UI on Xiaomi, Redmi and POCO devices.
+
+| Category | What you can change |
+| --- | --- |
+| Icons | Icon packs, per-app icons, Monet recolor, icon size (relative, stays centred), shadows |
+| Labels | Hide app / dock names, label text size |
+| Dock | 9 materials (stock, glass, frosted with real blur, liquid glass, solid, Monet, gradient, AMOLED, outline), tint, opacity, border, corner radius, width, padding, unlimited icons |
+| Folders | Same materials, corner radius, opacity, border, folder columns |
+| Widgets | Monet clock widget colors |
+| Recents & blur | Card corner radius, full recents blur, hide status bar, launcher blur strength |
+| Animations | Presets (Snappy → Cinematic), app open/close duration, recents transition, full / high-end animations, system animation scales (root) |
+| Control center | Corner radius of toggle tiles, cards and sliders |
+| Volume panel | Corner radius of the panel and slider, panel blur |
+
+Every category has a **live preview**, changes are collected and applied with one tap (**Apply**), and settings can be **exported / imported** as JSON. Items marked **Beta** use hooks that vary between ROM builds; if one has no effect, the LSPosed log shows `Hook '<name>' unavailable`.
+
+**LSPosed scope:** System Launcher (`com.miui.home`) and/or POCO Launcher (`com.mi.android.globallauncher`), plus **System UI** (`com.android.systemui`) for control center and volume panel tweaks.
+
 ## ✨ Features
 
 * **Universal Icon Pack Support:** Apply almost any standard Android icon pack from the Play Store directly to the stock HyperOS launcher.
